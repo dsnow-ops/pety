@@ -1,0 +1,17 @@
+{
+  "deepseek": {
+    "apiKey": "YOUR_DEEPSEEK_API_KEY_HERE",
+    "apiBaseUrl": "https://api.deepseek.com",
+    "model": "deepseek-chat",
+    "temperature": 0.7,
+    "maxTokens": 1000
+  },
+  "security": {
+    "maxUserMessageChars": 1200
+  },
+  "rateLimit": {
+    "enabled": true,
+    "dailyLimit": 30,
+    "collection": "deepseek_rate_limits"
+  }
+}

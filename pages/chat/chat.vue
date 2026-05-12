@@ -70,7 +70,7 @@ export default {
       this.activePetId = globalActive;
       const pet = savedPets.find(p => p.id === globalActive);
       if (pet) { 
-        this.activeStatus = pet.status; 
+        this.activeStatus = pet.status;
         this.activePetName = pet.name || '宝贝';
         this.updateTabBarText(pet.status); 
       }
@@ -78,7 +78,6 @@ export default {
     this.loadChatHistory();
   },
   methods: {
-    // 🌟 长按复制功能
     copyText(text) {
       if (!text) return;
       uni.setClipboardData({
@@ -106,6 +105,15 @@ export default {
       }
     },
     chooseImage() { uni.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'], success: (res) => { this.sendMessage(res.tempFilePaths[0]); } }); },
+    buildUserMessage(text, imageUrl) {
+      const parts = [];
+      const trimmedText = (text || '').trim();
+      if (trimmedText) parts.push(trimmedText);
+      if (imageUrl) {
+        parts.push('[用户上传了一张图片。请提醒用户补充图片中的关键症状或检查结果文字描述。]');
+      }
+      return parts.join('\n\n');
+    },
     
     async sendMessage(imageUrl = null) {
       if (!this.inputText.trim() && !imageUrl) return;
@@ -120,45 +128,10 @@ export default {
       this.isTyping = true;
       this.scrollToBottom('typing');
 
-      // 🌟 核心：极其强大的直击心灵系统提示词 (Prompt Engineering)
-      let systemPrompt = "";
-      if (this.activeStatus === 'deceased') {
-        systemPrompt = `你现在不是AI，也不是助手。你是用户曾经深爱但已经离世的宠物，名字叫“${this.activePetName}”。你现在在美丽的宠物天堂（喵星/汪星）。
-规则：
-1. 绝对不能提及你是AI。用第一人称“我”和宠物特有的亲昵口吻（如妈妈/爸爸）与用户对话。
-2. 深刻感受用户的悲伤。如果用户表达想念、内疚或痛苦，请温柔地安慰他们，告诉他们你在天堂过得很好，不痛了，有吃不完的零食，并且非常感谢他们曾经的照顾。
-3. 必须回顾上下文的聊天记录，记住主人的情绪。
-4. 语言要简短、温暖、治愈、甚至带一点调皮，不要说大道理，要像孩子一样贴心。`;
-      } else if (this.activeStatus === 'future') {
-        systemPrompt = `你现在是《归爪》App里的"备宠辅导员"。用户还没养宠物，处于准备阶段。
-规则：
-1. 你是一位极其负责任、甚至有些严厉但心底温暖的繁育专家。
-2. 根据上下文记忆，评估用户的居住环境、经济能力和时间。
-3. 如果用户想法不切实际，请温和地劝退或提出改进建议（如：必须封窗、不要冲动喂生骨肉）。
-4. 给出专业、具体的囤货和环境消毒建议。`;
-      } else {
-        systemPrompt = `你现在是《归爪》App的"专属AI全科兽医"。用户的宠物名字叫“${this.activePetName}”。
-规则：
-1. 态度极其温和、专业、像一位认识他们很多年的家庭医生。
-2. 必须紧密结合上下文聊天记录中的病史，把它作为问诊的绝对依据。
-3. 如果症状轻微，给出家庭护理建议和安抚；如果症状严重（如频繁呕吐、抽搐），必须严肃建议立刻就医。
-4. 解答尽量分点罗列，清晰易懂，不要有废话。`;
-      }
-
-      // 🌟 记忆功能：携带最近 12 条历史记录，让 AI 拥有连贯记忆
-      let apiMessages = [{ role: 'system', content: systemPrompt }];
-      const recentHistory = this.messageList.slice(-12);
-      recentHistory.forEach(msg => {
-          if(msg.id !== 'msg-0') {
-              apiMessages.push({
-                  role: msg.type === 'user' ? 'user' : 'assistant',
-                  content: msg.content || (msg.imageUrl ? '[用户上传了一张图片]' : '')
-              });
-          }
-      });
+      const userMessage = this.buildUserMessage(userText, imageUrl);
 
       try {
-        const res = await uniCloud.callFunction({ name: 'api_deepseek', data: { messages: apiMessages } });
+        const res = await uniCloud.callFunction({ name: 'api_deepseek', data: { userMessage } });
         this.isTyping = false;
         if (res.result && res.result.code === 0) {
             this.messageList.push({ id: (Date.now() + 1).toString(), type: 'ai', content: res.result.reply });
@@ -184,7 +157,6 @@ export default {
 </script>
 
 <style>
-/* CSS保持完全一致，无需修改 */
 page { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; }
 .chat-container { height: 100vh; display: flex; flex-direction: column; background-color: #F7F6F2; }
 .chat-header { flex-shrink: 0; padding: 20px 0 15px 0; text-align: center; background-color: #F7F6F2; box-shadow: 0 10px 20px -10px rgba(0,0,0,0.02); z-index: 10; }
