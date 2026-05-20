@@ -1,0 +1,66 @@
+{
+  "bsonType": "object",
+  "required": ["userId", "plan", "status", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "bsonType": "string",
+      "description": "Membership record id. Using userId is recommended for one active record per user."
+    },
+    "userId": {
+      "bsonType": "string",
+      "description": "uni-id user id."
+    },
+    "plan": {
+      "bsonType": "string",
+      "enum": ["free", "plus", "pro"],
+      "description": "Membership plan."
+    },
+    "status": {
+      "bsonType": "string",
+      "enum": ["active", "inactive", "expired", "refunded"],
+      "description": "Membership status."
+    },
+    "startedAt": {
+      "bsonType": "long",
+      "description": "Start timestamp in milliseconds."
+    },
+    "endedAt": {
+      "bsonType": "long",
+      "description": "End timestamp in milliseconds."
+    },
+    "expiresAt": {
+      "bsonType": "long",
+      "description": "Legacy expiration timestamp in milliseconds. Empty means no expiration."
+    },
+    "source": {
+      "bsonType": "string",
+      "description": "Membership source, for example manual, admin, app-store, wechat-pay."
+    },
+    "orderId": {
+      "bsonType": "string",
+      "description": "Payment or admin order id. Payment is not integrated in this stage."
+    },
+    "entitlements": {
+      "bsonType": "object",
+      "description": "Server-side entitlement overrides."
+    },
+    "updatedBy": {
+      "bsonType": "string",
+      "description": "Operator or system id."
+    },
+    "createdAt": {
+      "bsonType": "long",
+      "description": "Create timestamp in milliseconds."
+    },
+    "updatedAt": {
+      "bsonType": "long",
+      "description": "Update timestamp in milliseconds."
+    }
+  }
+}
