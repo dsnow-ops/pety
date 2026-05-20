@@ -7,6 +7,12 @@ unpackage/
 .env
 .env.*
 !.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/config.json
+uniCloud-aliyun/cloudfunctions/**/config.json
 uniCloud-aliyun/cloudfunctions/common/uni-config-center/**/config.json
+uniCloud-tcb/cloudfunctions/**/config.json
 uniCloud-tcb/cloudfunctions/common/uni-config-center/**/config.json
 **/config.local.json

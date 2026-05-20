@@ -14,7 +14,21 @@
     },
     "date": {
       "bsonType": "string",
-      "description": "UTC+8 date key, for example 2026-05-12."
+      "description": "UTC+8 period key, for example 2026-05-12 for free daily quota or 2026-05 for plus monthly quota."
+    },
+    "period": {
+      "bsonType": "string",
+      "description": "Quota period key."
+    },
+    "scope": {
+      "bsonType": "string",
+      "enum": ["day", "month"],
+      "description": "Quota window scope."
+    },
+    "plan": {
+      "bsonType": "string",
+      "enum": ["free", "plus"],
+      "description": "Membership plan used for this quota record."
     },
     "identityHash": {
       "bsonType": "string",

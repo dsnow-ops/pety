@@ -1,0 +1,22 @@
+{
+  "deepseek": {
+    "provider": "deepseek",
+    "apiKey": "YOUR_DEEPSEEK_API_KEY_HERE",
+    "baseUrl": "https://api.deepseek.com",
+    "model": "deepseek-chat",
+    "temperature": 0.7,
+    "maxTokens": 700,
+    "requestTimeoutMs": 15000
+  },
+  "security": {
+    "maxUserMessageChars": 800
+  },
+  "rateLimit": {
+    "enabled": true,
+    "freeDailyLimit": 3,
+    "plusMonthlyLimit": 300,
+    "membershipLookupEnabled": false,
+    "collection": "deepseek_rate_limits",
+    "membershipCollection": "pety_memberships"
+  }
+}
