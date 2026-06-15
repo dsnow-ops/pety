@@ -11,6 +11,15 @@ const RELATIONSHIP_CONFIG = {
     homeSubtitle: name => `把 ${name} 的日常、档案和照护线索慢慢收好。`,
     primaryActionText: '记录今天',
     secondaryActionText: '和它聊聊',
+    avatarActionText: '查看数字形象',
+    avatarEmptyText: '可以先保留真实照片，之后再生成它的数字形象。',
+    isPrimaryStage: true,
+    isHiddenMode: false,
+    isDeprecated: false,
+    modeEntryLabel: '正在陪伴',
+    modeConfirmTitle: '保持陪伴模式',
+    modeConfirmText: '当前宠物会继续使用陪伴模式，首页、记录和聊天都会围绕日常照护展开。',
+    themeClass: 'theme-current',
     timelineLabel: '陪伴记录',
     chatRoleName: '宠物陪伴助手',
     archiveLabel: '陪伴档案',
@@ -116,6 +125,15 @@ const RELATIONSHIP_CONFIG = {
     homeSubtitle: () => '先确认时间、预算、环境和照护能力，再慢慢靠近新的生命。',
     primaryActionText: '继续准备',
     secondaryActionText: '生成未来形象',
+    avatarActionText: '生成未来形象',
+    avatarEmptyText: '还没有真实照片时，可以先用柔和的未来形象做占位。',
+    isPrimaryStage: false,
+    isHiddenMode: false,
+    isDeprecated: true,
+    modeEntryLabel: '准备相遇（已暂缓）',
+    modeConfirmTitle: '准备相遇已暂缓',
+    modeConfirmText: '这个阶段保留用于兼容旧数据，暂不作为新用户主入口。',
+    themeClass: 'theme-future legacy-stage',
     timelineLabel: '准备记录',
     chatRoleName: '养宠准备助手',
     archiveLabel: '相遇计划',
@@ -219,6 +237,15 @@ const RELATIONSHIP_CONFIG = {
     homeSubtitle: name => `把关于 ${name} 的想念、片段和信慢慢收好。`,
     primaryActionText: '写一段回忆',
     secondaryActionText: '查看纪念册',
+    avatarActionText: '生成纪念肖像',
+    avatarEmptyText: '可以把真实照片温柔地整理成一张纪念肖像。',
+    isPrimaryStage: false,
+    isHiddenMode: true,
+    isDeprecated: false,
+    modeEntryLabel: '进入温柔纪念模式',
+    modeConfirmTitle: '进入温柔纪念模式',
+    modeConfirmText: '这会把 App 的文案和氛围切换为纪念模式，不会删除任何档案和记录。之后可以在档案中恢复为陪伴模式。',
+    themeClass: 'theme-memorial',
     timelineLabel: '回忆记录',
     chatRoleName: '回忆整理助手',
     archiveLabel: '纪念册',
@@ -253,6 +280,7 @@ const RELATIONSHIP_CONFIG = {
     chatBoundaryRules: [
       '不假装自己就是已离开的宠物。',
       '不说“我回来了”“我一直在你身边”等制造复活感的话。',
+      '如果未来要使用宠物口吻，必须先让用户确认边界并补充宠物性格、习惯和说话风格。',
       '不诱导用户沉溺悲伤。',
       '鼓励用户保存真实回忆、照顾自己。',
       '如用户表达强烈自伤风险，应建议立即寻求身边人或专业帮助。'
@@ -355,6 +383,32 @@ export function getRelationshipOptions() {
   return ['current', 'future', 'deceased'].map(status => RELATIONSHIP_CONFIG[status]);
 }
 
+export function getPrimaryRelationshipStages() {
+  return Object.keys(RELATIONSHIP_CONFIG)
+    .map(stage => RELATIONSHIP_CONFIG[stage])
+    .filter(config => config.isPrimaryStage && !config.isDeprecated);
+}
+
+export function getHiddenRelationshipModes() {
+  return Object.keys(RELATIONSHIP_CONFIG)
+    .map(stage => RELATIONSHIP_CONFIG[stage])
+    .filter(config => config.isHiddenMode && !config.isDeprecated);
+}
+
+export function shouldShowStageInOnboarding(stage) {
+  const config = getRelationshipStage(stage);
+  return Boolean(config.isPrimaryStage && !config.isHiddenMode && !config.isDeprecated);
+}
+
+export function isMemorialMode(stage) {
+  return normalizeRelationshipStage(stage) === 'deceased';
+}
+
+export function getRelationshipThemeClass(stage) {
+  const config = getRelationshipStage(stage);
+  return config.themeClass || `theme-${config.stageKey}`;
+}
+
 function resolveCopy(copy, pet) {
   if (typeof copy !== 'function') return copy;
   const petName = pet && pet.name ? pet.name : '毛孩子';
@@ -374,6 +428,8 @@ export function getRelationshipHomeCopy(stage, pet) {
     homeSubtitle: resolveCopy(config.homeSubtitle || config.home.subtitle, pet),
     primaryActionText: config.primaryActionText,
     secondaryActionText: config.secondaryActionText,
+    avatarActionText: config.avatarActionText || config.secondaryActionText,
+    avatarEmptyText: config.avatarEmptyText || '',
     timelineLabel: config.timelineLabel,
     chatRoleName: config.chatRoleName,
     archiveLabel: config.archiveLabel,
@@ -388,6 +444,15 @@ export function getRelationshipTimelineLabel(stage) {
 
 export function getRelationshipChatRole(stage) {
   return getRelationshipStage(stage).chatRoleName;
+}
+
+export function getRelationshipAvatarCopy(stage) {
+  const config = getRelationshipStage(stage);
+  return {
+    avatarActionText: config.avatarActionText || config.secondaryActionText || '查看数字形象',
+    avatarEmptyText: config.avatarEmptyText || '',
+    themeTone: config.themeTone
+  };
 }
 
 export function getRelationshipChatCopy(stage) {

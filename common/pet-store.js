@@ -1,4 +1,5 @@
 import { getPetRelationshipStage } from './relationship-config.js';
+import { getDefaultAvatarStyle, normalizeAvatarSource, normalizeAvatarStatus, normalizeAvatarStyle } from './pet-avatar-generator.js';
 
 const PET_LIST_KEY = 'my_pets_list';
 const ACTIVE_PET_ID_KEY = 'current_active_pet_id';
@@ -17,6 +18,15 @@ function normalizeStatus(status) {
   return ['current', 'deceased', 'future'].includes(status) ? status : 'current';
 }
 
+function resolveAvatarSource(rawPet, originalPhotoUrl, generatedAvatarUrl) {
+  if (['original', 'generated', 'placeholder'].includes(rawPet.avatarSource)) {
+    return normalizeAvatarSource(rawPet.avatarSource);
+  }
+  if (generatedAvatarUrl) return 'generated';
+  if (originalPhotoUrl) return 'original';
+  return 'placeholder';
+}
+
 function readArray(key) {
   const value = uni.getStorageSync(key);
   return Array.isArray(value) ? value : [];
@@ -24,15 +34,38 @@ function readArray(key) {
 
 function normalizePet(rawPet = {}) {
   const now = Date.now();
-  const photo = rawPet.photo || rawPet.avatar || rawPet.petPhoto || DEFAULT_PET_PHOTO;
+  const legacyPhoto = rawPet.photo ||
+    rawPet.avatar ||
+    rawPet.avatarUrl ||
+    rawPet.imageUrl ||
+    rawPet.image ||
+    rawPet.petImage ||
+    rawPet.profileImage ||
+    rawPet.petPhoto ||
+    '';
+  const photo = legacyPhoto || DEFAULT_PET_PHOTO;
   const createdAt = rawPet.createdAt || now;
   const relationshipStage = getPetRelationshipStage(rawPet);
+  const originalPhotoUrl = rawPet.originalPhotoUrl ||
+    (legacyPhoto && legacyPhoto !== DEFAULT_PET_PHOTO ? legacyPhoto : '');
+  const generatedAvatarUrl = rawPet.generatedAvatarUrl || '';
 
   return {
     id: rawPet.id || createPetId(),
     name: rawPet.name || rawPet.petName || '毛孩子',
     avatar: photo,
     photo,
+    avatarUrl: rawPet.avatarUrl || '',
+    imageUrl: rawPet.imageUrl || '',
+    image: rawPet.image || '',
+    petImage: rawPet.petImage || '',
+    profileImage: rawPet.profileImage || '',
+    avatarSource: resolveAvatarSource(rawPet, originalPhotoUrl, generatedAvatarUrl),
+    originalPhotoUrl,
+    generatedAvatarUrl,
+    avatarStyle: normalizeAvatarStyle(rawPet.avatarStyle || getDefaultAvatarStyle(relationshipStage), relationshipStage),
+    avatarStatus: normalizeAvatarStatus(rawPet.avatarStatus || (generatedAvatarUrl ? 'ready' : 'none')),
+    avatarUpdatedAt: rawPet.avatarUpdatedAt || (generatedAvatarUrl ? (rawPet.updatedAt || createdAt) : 0),
     mode: normalizeMode(rawPet.mode || rawPet.petMode),
     relationshipStage,
     status: normalizeStatus(relationshipStage),

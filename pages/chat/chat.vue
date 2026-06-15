@@ -1,5 +1,5 @@
 <template>
-  <view class="chat-page">
+  <view :class="['chat-page', themeClass]">
     <view class="chat-header">
       <view class="pet-mini">
         <image v-if="activePetPhoto" :src="activePetPhoto" class="pet-mini-img" mode="aspectFill"></image>
@@ -134,6 +134,7 @@ import {
   getRelationshipChatQuickQuestions,
   getRelationshipChatSystemRole,
   getRelationshipConfig,
+  getRelationshipThemeClass,
   setRelationshipTabBar
 } from '../../common/relationship-config.js';
 
@@ -170,6 +171,9 @@ export default {
     },
     chatCopy() {
       return getRelationshipChatCopy(this.activeStatus);
+    },
+    themeClass() {
+      return getRelationshipThemeClass(this.activeStatus);
     },
     promptSuggestions() {
       return getRelationshipChatQuickQuestions(this.activeStatus);

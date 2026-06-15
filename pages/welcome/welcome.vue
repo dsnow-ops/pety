@@ -47,6 +47,16 @@
         </view>
       </view>
 
+      <view class="avatar-mock-panel" hover-class="avatar-mock-panel-hover" @click="showAvatarMockHint">
+        <view class="avatar-mock-icon">
+          <uni-icons type="image" size="24" color="#8C7557"></uni-icons>
+        </view>
+        <view class="avatar-mock-copy">
+          <text class="avatar-mock-title">上传照片，生成归爪电子形象（mock）</text>
+          <text class="avatar-mock-desc">可跳过。将默认使用{{ defaultAvatarStyleText }}，本轮只保存在本地，不上传云端。</text>
+        </view>
+      </view>
+
       <view class="mode-selector">
         <view
           :class="['mode-option', petMode === 'simple' ? 'mode-option-active' : '']"
@@ -81,12 +91,16 @@
 
 <script>
 import { addPet, canCreatePet, getActivePet, updateActivePet } from '../../common/pet-store.js';
-import { getPetRelationshipStage, getRelationshipConfig, getRelationshipOptions, normalizeRelationshipStage, withRelationshipStage } from '../../common/relationship-config.js';
+import { getPetRelationshipStage, getPrimaryRelationshipStages, getRelationshipConfig, normalizeRelationshipStage, withRelationshipStage } from '../../common/relationship-config.js';
+import { getAvatarStyleText, getDefaultAvatarStyle } from '../../common/pet-avatar-generator.js';
+
+const ONBOARDING_PENDING_KEY = 'guizhua_onboarding_pending';
 
 export default {
   data() {
     return {
       activePetId: null,
+      activePetSnapshot: null,
       entryMode: 'edit',
       petName: '',
       petMode: '2.5d',
@@ -97,10 +111,16 @@ export default {
   },
   computed: {
     relationshipOptions() {
-      return getRelationshipOptions();
+      return getPrimaryRelationshipStages();
     },
     currentConfig() {
       return getRelationshipConfig(this.petStatus);
+    },
+    defaultAvatarStyle() {
+      return getDefaultAvatarStyle(this.petStatus);
+    },
+    defaultAvatarStyleText() {
+      return getAvatarStyleText(this.defaultAvatarStyle, this.petStatus);
     },
     awakeningText() {
       return this.currentConfig.welcome.loadingText(this.petName || '这段关系');
@@ -112,6 +132,7 @@ export default {
   onShow() {
     if (this.entryMode === 'create') {
       this.activePetId = null;
+      this.activePetSnapshot = null;
       this.petName = '';
       this.petMode = '2.5d';
       this.petStatus = 'current';
@@ -123,6 +144,7 @@ export default {
     if (!activePet) return;
 
     this.activePetId = activePet.id;
+    this.activePetSnapshot = activePet;
     this.petName = activePet.name;
     this.petMode = activePet.mode;
     this.petStatus = getPetRelationshipStage(activePet);
@@ -148,6 +170,27 @@ export default {
         }
       });
     },
+    showAvatarMockHint() {
+      uni.showToast({ title: '本轮仅预留 mock 流程，暂不调用真实生成', icon: 'none' });
+    },
+    buildAvatarPatch(relationshipStage, photo) {
+      const existing = this.activePetSnapshot || {};
+      const originalPhotoUrl = photo && photo !== '/static/pet.png'
+        ? photo
+        : (existing.originalPhotoUrl || '');
+      const generatedAvatarUrl = existing.generatedAvatarUrl || '';
+      const avatarSource = existing.avatarSource ||
+        (generatedAvatarUrl ? 'generated' : (originalPhotoUrl ? 'original' : 'placeholder'));
+
+      return {
+        avatarSource,
+        originalPhotoUrl,
+        generatedAvatarUrl,
+        avatarStyle: existing.avatarStyle || getDefaultAvatarStyle(relationshipStage),
+        avatarStatus: existing.avatarStatus || 'none',
+        avatarUpdatedAt: existing.avatarUpdatedAt || 0
+      };
+    },
     startAwakening() {
       const petName = this.petName.trim();
       if (!petName) {
@@ -166,14 +209,19 @@ export default {
       const petPatch = withRelationshipStage({
         name: petName,
         photo,
-        mode: this.petMode
+        mode: this.petMode,
+        ...this.buildAvatarPatch(relationshipStage, photo)
       }, relationshipStage);
 
+      const shouldTriggerOnboarding = !this.activePetId;
       const pet = (this.activePetId
         ? updateActivePet(petPatch)
         : null) || addPet(petPatch);
 
       this.petName = pet.name;
+      if (shouldTriggerOnboarding) {
+        uni.setStorageSync(ONBOARDING_PENDING_KEY, true);
+      }
 
       setTimeout(() => {
         uni.switchTab({ url: '/pages/home/home' });
@@ -377,6 +425,56 @@ export default {
   color: #8F877A;
   font-size: 24rpx;
   line-height: 1.4;
+}
+
+.avatar-mock-panel {
+  margin-top: 20rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 16rpx;
+  background: #FFFDF8;
+  border: 1rpx dashed #D9CBB8;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.avatar-mock-panel-hover {
+  opacity: 0.82;
+}
+
+.avatar-mock-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #F2EDE3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-mock-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar-mock-title,
+.avatar-mock-desc {
+  display: block;
+}
+
+.avatar-mock-title {
+  color: #302A23;
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.avatar-mock-desc {
+  margin-top: 6rpx;
+  color: #8F877A;
+  font-size: 22rpx;
+  line-height: 1.35;
 }
 
 .mode-selector {

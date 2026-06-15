@@ -1,5 +1,5 @@
 <template>
-  <view class="home-page">
+  <view :class="['home-page', themeClass]">
     <view class="home-hero">
       <view class="brand-bar">
         <view class="brand-copy">
@@ -33,7 +33,10 @@
             <text class="section-title">{{ todayTitle }}</text>
             <text class="section-subtitle">{{ homeSubtitle }}</text>
           </view>
-          <view class="mode-chip">{{ modeText }}</view>
+          <view class="chip-stack">
+            <view class="mode-chip">{{ modeText }}</view>
+            <view class="avatar-chip" hover-class="avatar-chip-hover" @click="handleAvatarMock">{{ avatarActionText }}</view>
+          </view>
         </view>
 
         <view class="quick-grid">
@@ -104,7 +107,11 @@
 import { getActivePet, updateActivePet } from '../../common/pet-store.js';
 import { formatDateKey, getDiaryRecord, getEventLabel, getMoodLabel, hasDiaryRecord } from '../../common/diary-store.js';
 import { formatPetAge, getNeuteredLabel, getPetProfile, getProfileCompletion, getSpeciesLabel } from '../../common/profile-store.js';
-import { getPetRelationshipStage, getRelationshipConfig, getRelationshipHomeCopy, setRelationshipTabBar } from '../../common/relationship-config.js';
+import { getPetRelationshipStage, getRelationshipConfig, getRelationshipHomeCopy, getRelationshipThemeClass, setRelationshipTabBar } from '../../common/relationship-config.js';
+import { createAvatarJob, getAvatarDisplayImage, saveGeneratedAvatar } from '../../common/pet-avatar-generator.js';
+
+const ONBOARDING_SEEN_KEY = 'guizhua_onboarding_seen';
+const ONBOARDING_PENDING_KEY = 'guizhua_onboarding_pending';
 
 export default {
   data() {
@@ -132,6 +139,9 @@ export default {
     homeCopy() {
       return getRelationshipHomeCopy(this.activeRelationshipStage, this.activePet || { name: this.petName });
     },
+    themeClass() {
+      return getRelationshipThemeClass(this.activeRelationshipStage);
+    },
     quickActions() {
       return this.relationshipConfig.home.quickActions;
     },
@@ -150,6 +160,15 @@ export default {
     },
     modeText() {
       return this.mode === 'simple' ? '照片模式' : '2.5D 陪伴';
+    },
+    hasGeneratedAvatar() {
+      return Boolean(this.activePet && this.activePet.avatarStatus === 'ready' && this.activePet.generatedAvatarUrl);
+    },
+    avatarActionText() {
+      if (this.activeRelationshipStage === 'deceased') {
+        return this.hasGeneratedAvatar ? '查看纪念肖像' : '生成纪念肖像';
+      }
+      return this.hasGeneratedAvatar ? '查看电子宠物' : '生成电子宠物形象';
     },
     todayTitle() {
       return this.activePet ? this.homeCopy.homeTitle : this.homeCopy.emptyText;
@@ -223,8 +242,28 @@ export default {
   },
   onShow() {
     this.loadHomeData();
+    this.$nextTick(() => {
+      this.maybeShowOnboardingGuide();
+    });
   },
   methods: {
+    maybeShowOnboardingGuide() {
+      if (uni.getStorageSync(ONBOARDING_SEEN_KEY)) return;
+
+      const pendingAfterCreate = Boolean(uni.getStorageSync(ONBOARDING_PENDING_KEY));
+      const firstEnterWithoutPet = !this.activePet;
+      if (!pendingAfterCreate && !firstEnterWithoutPet) return;
+
+      uni.setStorageSync(ONBOARDING_SEEN_KEY, true);
+      uni.removeStorageSync(ONBOARDING_PENDING_KEY);
+      uni.showModal({
+        title: '欢迎来到归爪',
+        content: '1. 建立宠物档案\n2. 上传照片，生成电子宠物形象\n3. 记录今天，或者和它聊聊',
+        cancelText: '稍后再说',
+        confirmText: '知道了',
+        showCancel: true
+      });
+    },
     loadHomeData() {
       const activePet = getActivePet();
       this.activePet = activePet;
@@ -241,7 +280,7 @@ export default {
       }
 
       this.petName = activePet.name || '毛孩子';
-      this.petPhoto = activePet.photo || activePet.avatar || '/static/pet.png';
+      this.petPhoto = getAvatarDisplayImage(activePet);
       this.mode = activePet.mode || '2.5d';
       this.profile = getPetProfile(activePet.id);
       this.todayRecord = getDiaryRecord(activePet.id, formatDateKey());
@@ -280,6 +319,24 @@ export default {
           uni.showToast({ title: `已切换为${this.modeText}`, icon: 'none' });
         }
       });
+    },
+    handleAvatarMock() {
+      if (!this.activePet) {
+        uni.showToast({ title: '请先建立宠物档案', icon: 'none' });
+        return;
+      }
+
+      if (this.hasGeneratedAvatar) {
+        uni.showToast({ title: this.activeRelationshipStage === 'deceased' ? '纪念肖像已在首页展示' : '电子宠物已在首页展示', icon: 'none' });
+        return;
+      }
+
+      const job = createAvatarJob(this.activePet, { avatarStyle: this.activePet.avatarStyle });
+      const patch = saveGeneratedAvatar(this.activePet, job.result);
+      const updatedPet = updateActivePet(patch);
+      this.activePet = updatedPet || { ...this.activePet, ...patch };
+      this.petPhoto = getAvatarDisplayImage(this.activePet);
+      uni.showToast({ title: '已生成 mock 数字形象', icon: 'none' });
     },
     handleQuickAction(key) {
       const promptMap = {
@@ -351,7 +408,19 @@ export default {
       const activePetId = uni.getStorageSync('current_active_pet_id');
       const pets = uni.getStorageSync('my_pets_list') || [];
       const activePet = Array.isArray(pets) ? pets.find(pet => pet.id === activePetId) : null;
-      return activePet ? (activePet.photo || activePet.avatar || '/static/pet.png') : '/static/pet.png';
+      return activePet
+        ? (activePet.generatedAvatarUrl ||
+          activePet.originalPhotoUrl ||
+          activePet.avatar ||
+          activePet.avatarUrl ||
+          activePet.imageUrl ||
+          activePet.image ||
+          activePet.photo ||
+          activePet.petImage ||
+          activePet.profileImage ||
+          activePet.petPhoto ||
+          '/static/pet.png')
+        : '/static/pet.png';
     },
     initPixi() {
       const petPhoto = this.getActivePetPhoto();
@@ -594,13 +663,31 @@ export default {
   line-height: 1.4;
 }
 
-.mode-chip {
+.chip-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10rpx;
+  flex-shrink: 0;
+}
+
+.mode-chip,
+.avatar-chip {
   padding: 12rpx 18rpx;
   border: 1rpx solid #D9CBB8;
   border-radius: 999rpx;
   color: #6B5D4D;
   font-size: 22rpx;
   background: #FFFDF8;
+}
+
+.avatar-chip {
+  color: #8C7557;
+  background: #F7F3EA;
+}
+
+.avatar-chip-hover {
+  opacity: 0.78;
 }
 
 .quick-grid {

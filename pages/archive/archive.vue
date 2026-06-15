@@ -1,5 +1,5 @@
 <template>
-  <view class="archive-page">
+  <view :class="['archive-page', themeClass]">
     <scroll-view scroll-y class="archive-scroll">
       <view class="top-bar">
         <button class="icon-button" hover-class="icon-button-hover" @click="goBack">
@@ -13,7 +13,7 @@
       </view>
 
       <view v-if="activePet" class="pet-card">
-        <image :src="activePet.photo || activePet.avatar" class="pet-photo" mode="aspectFill"></image>
+        <image :src="petAvatarImage" class="pet-photo" mode="aspectFill"></image>
         <view class="pet-copy">
           <text class="pet-name">{{ activePet.name }}</text>
           <text class="pet-desc">档案越完整，问诊时越能少说重复的话</text>
@@ -21,6 +21,13 @@
             <text class="stage-pill">{{ relationshipConfig.stageName }}</text>
             <text class="stage-desc">{{ relationshipConfig.coreTask }}</text>
           </view>
+          <view class="avatar-state-row">
+            <text class="avatar-state-pill">{{ avatarStatusText }}</text>
+            <text class="avatar-style-text">{{ avatarStyleText }}</text>
+          </view>
+          <button class="avatar-regenerate-btn" hover-class="avatar-regenerate-btn-hover" @click="regenerateAvatarMock">
+            重新生成形象（占位）
+          </button>
         </view>
         <view class="completion-ring">
           <text>{{ completion }}%</text>
@@ -33,6 +40,18 @@
       </view>
 
       <view v-if="activePet" class="form-section">
+        <view class="section-card memorial-mode-card">
+          <text class="section-title">关系模式</text>
+          <text class="memorial-mode-desc">{{ memorialModeDesc }}</text>
+          <button
+            class="mode-toggle-btn"
+            hover-class="mode-toggle-btn-hover"
+            @click="toggleMemorialMode"
+          >
+            {{ memorialModeButtonText }}
+          </button>
+        </view>
+
         <view class="section-card">
           <text class="section-title">基础信息</text>
 
@@ -157,9 +176,10 @@
 </template>
 
 <script>
-import { getActivePet } from '../../common/pet-store.js';
+import { getActivePet, updateActivePet } from '../../common/pet-store.js';
 import { getPetProfile, getProfileCompletion, savePetProfile } from '../../common/profile-store.js';
-import { getPetRelationshipStage, getRelationshipConfig } from '../../common/relationship-config.js';
+import { getPetRelationshipStage, getRelationshipConfig, getRelationshipThemeClass, isMemorialMode, withRelationshipStage } from '../../common/relationship-config.js';
+import { createAvatarJob, getAvatarDisplayImage, getAvatarStatusText, getAvatarStyleText, saveGeneratedAvatar } from '../../common/pet-avatar-generator.js';
 
 export default {
   data() {
@@ -192,6 +212,28 @@ export default {
     relationshipConfig() {
       return getRelationshipConfig(this.relationshipStage);
     },
+    themeClass() {
+      return getRelationshipThemeClass(this.relationshipStage);
+    },
+    petAvatarImage() {
+      return getAvatarDisplayImage(this.activePet);
+    },
+    avatarStatusText() {
+      return getAvatarStatusText(this.activePet);
+    },
+    avatarStyleText() {
+      return getAvatarStyleText(this.activePet && this.activePet.avatarStyle, this.relationshipStage);
+    },
+    memorialModeDesc() {
+      return isMemorialMode(this.relationshipStage)
+        ? '纪念模式已开启。首页、记录和聊天会保持原布局，并切换为纪念氛围。'
+        : '如需要，可以主动开启温柔纪念模式；它不会删除任何档案和记录。';
+    },
+    memorialModeButtonText() {
+      return isMemorialMode(this.relationshipStage)
+        ? '恢复为陪伴模式'
+        : (getRelationshipConfig('deceased').modeEntryLabel || '进入温柔纪念模式');
+    },
     completion() {
       return getProfileCompletion(this.form);
     }
@@ -219,6 +261,49 @@ export default {
       setTimeout(() => {
         this.goBack();
       }, 650);
+    },
+    toggleMemorialMode() {
+      if (!this.activePet) return;
+
+      if (isMemorialMode(this.relationshipStage)) {
+        uni.showModal({
+          title: '恢复为陪伴模式',
+          content: '这会把 App 的文案、记录语义和聊天身份恢复为陪伴模式，不会删除任何档案和记录。',
+          cancelText: '先不恢复',
+          confirmText: '恢复陪伴',
+          confirmColor: '#8C7557',
+          success: (res) => {
+            if (res.confirm) this.updateRelationshipMode('current', '已恢复为陪伴模式');
+          }
+        });
+        return;
+      }
+
+      const memorialConfig = getRelationshipConfig('deceased');
+      uni.showModal({
+        title: memorialConfig.modeConfirmTitle,
+        content: memorialConfig.modeConfirmText,
+        cancelText: '先不进入',
+        confirmText: '进入纪念',
+        confirmColor: '#8C7557',
+        success: (res) => {
+          if (res.confirm) this.updateRelationshipMode('deceased', '纪念模式已开启');
+        }
+      });
+    },
+    updateRelationshipMode(stage, toastTitle) {
+      const updatedPet = updateActivePet(withRelationshipStage({}, stage));
+      if (updatedPet) this.activePet = updatedPet;
+      uni.showToast({ title: toastTitle, icon: 'none' });
+    },
+    regenerateAvatarMock() {
+      if (!this.activePet) return;
+
+      const job = createAvatarJob(this.activePet, { avatarStyle: this.activePet.avatarStyle });
+      const patch = saveGeneratedAvatar(this.activePet, job.result);
+      const updatedPet = updateActivePet(patch);
+      if (updatedPet) this.activePet = updatedPet;
+      uni.showToast({ title: '已生成 mock 形象', icon: 'none' });
     },
     goBack() {
       const pages = getCurrentPages();
@@ -372,6 +457,51 @@ export default {
   line-height: 1.3;
 }
 
+.avatar-state-row {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+.avatar-state-pill {
+  padding: 7rpx 14rpx;
+  border-radius: 999rpx;
+  background: #F7F3EA;
+  color: #6B5D4D;
+  font-size: 20rpx;
+  line-height: 1.2;
+}
+
+.avatar-style-text {
+  color: #8F877A;
+  font-size: 21rpx;
+  line-height: 1.3;
+}
+
+.avatar-regenerate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12rpx 0 0;
+  padding: 0 18rpx;
+  height: 52rpx;
+  border-radius: 999rpx;
+  background: #F7F3EA;
+  color: #8C7557;
+  font-size: 21rpx;
+  line-height: 52rpx;
+}
+
+.avatar-regenerate-btn::after {
+  border: none;
+}
+
+.avatar-regenerate-btn-hover {
+  opacity: 0.78;
+}
+
 .completion-ring {
   width: 82rpx;
   height: 82rpx;
@@ -398,6 +528,37 @@ export default {
 
 .section-card {
   padding: 28rpx;
+}
+
+.memorial-mode-card {
+  margin-top: 28rpx;
+}
+
+.memorial-mode-desc {
+  display: block;
+  margin-top: 12rpx;
+  color: #8F877A;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.mode-toggle-btn {
+  margin-top: 22rpx;
+  width: 100%;
+  height: 78rpx;
+  border-radius: 16rpx;
+  background: #F7F3EA;
+  color: #6B5D4D;
+  font-size: 26rpx;
+  line-height: 78rpx;
+}
+
+.mode-toggle-btn::after {
+  border: none;
+}
+
+.mode-toggle-btn-hover {
+  opacity: 0.78;
 }
 
 .section-title {

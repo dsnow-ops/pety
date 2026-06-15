@@ -1,5 +1,5 @@
 <template>
-  <view class="calendar-page">
+  <view :class="['calendar-page', themeClass]">
     <view class="top-bar">
       <button class="icon-button" hover-class="icon-button-hover" @click="goBack">
         <uni-icons type="left" size="22" color="#302A23"></uni-icons>
@@ -131,7 +131,8 @@ import {
   getRelationshipConfig,
   getRelationshipRecordCopy,
   getRelationshipRecordTypeLabel,
-  getRelationshipRecordTypes
+  getRelationshipRecordTypes,
+  getRelationshipThemeClass
 } from '../../common/relationship-config.js';
 
 export default {
@@ -167,6 +168,9 @@ export default {
     },
     recordCopy() {
       return getRelationshipRecordCopy(this.relationshipStage);
+    },
+    themeClass() {
+      return getRelationshipThemeClass(this.relationshipStage);
     },
     eventOptions() {
       const options = getRelationshipRecordTypes(this.relationshipStage);
