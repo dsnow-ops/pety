@@ -40,6 +40,7 @@
               <text>{{ suggestion }}</text>
             </view>
           </view>
+          <text class="prompt-safety">{{ uiText.safetyHint }}</text>
         </view>
 
         <view v-if="contextBadges.length" class="context-card">
@@ -126,7 +127,15 @@ import { getActivePet } from '../../common/pet-store.js';
 import { buildDiaryContext } from '../../common/diary-store.js';
 import { buildProfileContext, getPetProfile } from '../../common/profile-store.js';
 import { saveConsultationRecord } from '../../common/consultation-store.js';
-import { getRelationshipConfig, setRelationshipTabBar } from '../../common/relationship-config.js';
+import {
+  getPetRelationshipStage,
+  getRelationshipChatBoundaryRules,
+  getRelationshipChatCopy,
+  getRelationshipChatQuickQuestions,
+  getRelationshipChatSystemRole,
+  getRelationshipConfig,
+  setRelationshipTabBar
+} from '../../common/relationship-config.js';
 
 const MAX_CLOUD_MESSAGE_CHARS = 760;
 const SAFETY_FOOTER = '我先陪你把情况梳理到这里。若宝贝的症状持续、加重，或出现明显疼痛、精神沉郁、脱水等变化，请尽快联系线下兽医，让它得到更稳妥的检查。';
@@ -159,8 +168,11 @@ export default {
     relationshipConfig() {
       return getRelationshipConfig(this.activeStatus);
     },
+    chatCopy() {
+      return getRelationshipChatCopy(this.activeStatus);
+    },
     promptSuggestions() {
-      return this.relationshipConfig.chat.suggestions(this.activePetName);
+      return getRelationshipChatQuickQuestions(this.activeStatus);
     },
     serviceActions() {
       return this.relationshipConfig.chat.serviceActions;
@@ -182,12 +194,13 @@ export default {
     uiText() {
       const chat = this.relationshipConfig.chat;
       return {
-        title: chat.title,
-        subtitle: chat.subtitle(this.activePetName),
+        title: this.chatCopy.chatPageTitle,
+        subtitle: this.chatCopy.chatPageSubtitle,
         aiAvatar: chat.aiAvatar,
-        placeholder: chat.placeholder,
-        welcomeMsg: chat.welcomeMsg(this.activePetName),
-        promptTitle: chat.promptTitle,
+        placeholder: this.chatCopy.chatInputPlaceholder,
+        welcomeMsg: this.chatCopy.chatGreeting,
+        promptTitle: this.chatCopy.chatPrimaryIntent,
+        safetyHint: this.chatCopy.chatSafetyHint,
         collapsedText: chat.collapsedText
       };
     }
@@ -197,10 +210,10 @@ export default {
     if (activePet) {
       this.activePet = activePet;
       this.activePetId = activePet.id;
-      this.activeStatus = activePet.status;
+      this.activeStatus = getPetRelationshipStage(activePet);
       this.activePetName = activePet.name || '宝贝';
       this.activePetPhoto = activePet.photo || activePet.avatar || '';
-      this.updateTabBarText(activePet.status);
+      this.updateTabBarText(this.activeStatus);
     } else {
       this.activePet = null;
       this.activePetId = null;
@@ -311,34 +324,49 @@ export default {
     },
     buildUserMessage(text, imageUrl) {
       const trimmedText = (text || '').trim();
+      const stageInstruction = this.buildStageInstruction();
       const currentQuestion = trimmedText ? `用户当前问题：${trimmedText}` : '用户当前问题：上传了一张图片。';
       const imageHint = imageUrl
         ? '用户上传了一张图片。请提醒用户补充图片中的关键症状或检查结果文字描述，不要声称已经看到了图片。'
         : '';
       const fixedContent = [currentQuestion, imageHint].filter(Boolean).join('\n');
       const profileContext = buildProfileContext(this.activePet, getPetProfile(this.activePetId), {
-        maxChars: Math.min(240, Math.max(MAX_CLOUD_MESSAGE_CHARS - fixedContent.length - 48, 0))
+        maxChars: Math.min(180, Math.max(MAX_CLOUD_MESSAGE_CHARS - fixedContent.length - stageInstruction.length - 48, 0))
       });
-      const diaryBudget = Math.max(MAX_CLOUD_MESSAGE_CHARS - fixedContent.length - profileContext.length - 32, 0);
+      const diaryBudget = Math.max(MAX_CLOUD_MESSAGE_CHARS - fixedContent.length - stageInstruction.length - profileContext.length - 32, 0);
       const diaryContext = buildDiaryContext(this.activePetId, {
         maxDays: 14,
-        maxChars: Math.min(diaryBudget, 420)
+        maxChars: Math.min(diaryBudget, 260)
       });
-      const message = [profileContext, diaryContext, fixedContent].filter(Boolean).join('\n\n');
+      const message = [stageInstruction, profileContext, diaryContext, fixedContent].filter(Boolean).join('\n\n');
 
       if (message.length <= MAX_CLOUD_MESSAGE_CHARS) {
         return message;
       }
 
       if (trimmedText.length > MAX_CLOUD_MESSAGE_CHARS - 24) {
-        return `用户当前问题：${trimmedText.slice(0, MAX_CLOUD_MESSAGE_CHARS - 32)}…`;
+        const questionBudget = Math.max(MAX_CLOUD_MESSAGE_CHARS - stageInstruction.length - 36, 80);
+        return `${stageInstruction}\n\n用户当前问题：${trimmedText.slice(0, questionBudget)}…`;
       }
 
       if (imageUrl) {
-        return [profileContext, diaryContext, currentQuestion].filter(Boolean).join('\n\n').slice(0, MAX_CLOUD_MESSAGE_CHARS);
+        return [stageInstruction, profileContext, diaryContext, currentQuestion].filter(Boolean).join('\n\n').slice(0, MAX_CLOUD_MESSAGE_CHARS);
       }
 
-      return currentQuestion;
+      return [stageInstruction, currentQuestion].filter(Boolean).join('\n\n').slice(0, MAX_CLOUD_MESSAGE_CHARS);
+    },
+    buildStageInstruction() {
+      const role = getRelationshipChatSystemRole(this.activeStatus);
+      const boundaryRules = getRelationshipChatBoundaryRules(this.activeStatus);
+      const rulesText = boundaryRules.length
+        ? boundaryRules.map((rule, index) => `${index + 1}. ${rule}`).join('\n')
+        : '1. 回答要温柔、具体、可执行。';
+
+      return [
+        `当前关系阶段：${this.relationshipConfig.stageName}`,
+        `阶段角色：${role}`,
+        `阶段边界：\n${rulesText}`
+      ].join('\n');
     },
     detectUrgentRisk(text) {
       const normalizedText = String(text || '').trim();
@@ -370,16 +398,16 @@ export default {
     },
     decorateAssistantReply(reply, riskInfo) {
       if (this.activeStatus === 'deceased') {
-        return `${reply}\n\n我会陪你慢慢收好今天这一点想念，不急着把它变成什么结论。`;
+        return `${reply}\n\n${this.chatCopy.chatSafetyHint}`;
       }
 
       if (this.activeStatus === 'future') {
-        return `${reply}\n\n准备可以慢慢来。我们先把最重要的条件理清，再一步一步迎接它。`;
+        return `${reply}\n\n${this.chatCopy.chatSafetyHint}`;
       }
 
       const urgentFooter = riskInfo && riskInfo.level === 'urgent'
         ? '如果这些症状现在仍在发生，请先把宝贝的安全放在第一位，尽快联系附近兽医或急诊。我也可以帮你整理就医前要说清楚的信息。'
-        : SAFETY_FOOTER;
+        : this.chatCopy.chatSafetyHint || SAFETY_FOOTER;
 
       return `${reply}\n\n${urgentFooter}`;
     },
@@ -619,6 +647,14 @@ export default {
   display: flex;
   align-items: center;
   gap: 12rpx;
+}
+
+.prompt-safety {
+  display: block;
+  margin-top: 18rpx;
+  color: #8F877A;
+  font-size: 22rpx;
+  line-height: 1.45;
 }
 
 .context-card {

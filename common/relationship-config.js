@@ -30,6 +30,26 @@ const RELATIONSHIP_CONFIG = {
       { key: 'deworm', label: '驱虫' },
       { key: 'abnormal', label: '异常观察' }
     ],
+    chatPageTitle: '陪伴中的照护',
+    chatPageSubtitle: '一起记录、理解和照顾它今天的状态',
+    chatInputPlaceholder: '说说它今天的状态、饮食、精神或异常',
+    chatGreeting: '我会结合它的档案和最近记录，陪你一起观察它的状态。',
+    chatPrimaryIntent: '陪伴照护',
+    chatQuickQuestions: [
+      '它今天精神不太好怎么办？',
+      '最近食欲变差要注意什么？',
+      '驱虫和疫苗怎么安排？',
+      '我该怎么记录它的异常？'
+    ],
+    chatSafetyHint: '我不能替代兽医诊断；如出现持续异常、疼痛、呕吐、抽搐、呼吸困难等情况，请尽快就医。',
+    chatSystemRole: '你是归爪的宠物陪伴与照护助手，基于宠物档案和近期记录提供观察建议、记录建议和就医提醒。',
+    chatBoundaryRules: [
+      '不做确定诊断。',
+      '不承诺治疗效果。',
+      '高风险症状必须建议及时就医。',
+      '不推荐危险用药或人用药。',
+      '回答要分清“观察建议”和“需要就医”。'
+    ],
     status: 'current',
     label: '正在陪伴',
     shortLabel: '陪伴',
@@ -114,6 +134,25 @@ const RELATIONSHIP_CONFIG = {
       { key: 'learn', label: '养宠学习' },
       { key: 'countdown', label: '相遇倒计时' }
     ],
+    chatPageTitle: '相遇前的准备',
+    chatPageSubtitle: '一起把迎接它之前的事情慢慢准备好',
+    chatInputPlaceholder: '问问养宠准备、用品、预算或第一次见面',
+    chatGreeting: '我会陪你把迎接它之前的每一步准备好。',
+    chatPrimaryIntent: '准备建议',
+    chatQuickQuestions: [
+      '第一次养宠需要准备什么？',
+      '我适合养什么性格的宠物？',
+      '接它回家前要买哪些东西？',
+      '每月大概需要多少预算？'
+    ],
+    chatSafetyHint: '建议仅作养宠准备参考，具体健康和医疗问题请咨询专业兽医。',
+    chatSystemRole: '你是归爪的养宠准备助手，帮助用户在相遇前做好理性、温柔、实际的准备。',
+    chatBoundaryRules: [
+      '不假装宠物已经真实存在。',
+      '不制造过度承诺或过度幻想。',
+      '遇到医疗问题时提示咨询兽医。',
+      '回答要具体、温柔、可执行。'
+    ],
     status: 'future',
     label: '准备相遇',
     shortLabel: '备宠',
@@ -197,6 +236,26 @@ const RELATIONSHIP_CONFIG = {
       { key: 'letter', label: '给它的话' },
       { key: 'anniversary', label: '纪念日' },
       { key: 'story', label: '共同故事' }
+    ],
+    chatPageTitle: '和回忆聊聊',
+    chatPageSubtitle: '我会陪你整理和它有关的故事，而不是替代它',
+    chatInputPlaceholder: '写下你今天想起它的一件小事',
+    chatGreeting: '你可以慢慢说，我会陪你把和它有关的回忆温柔地整理下来。',
+    chatPrimaryIntent: '回忆整理',
+    chatQuickQuestions: [
+      '帮我整理一段关于它的回忆',
+      '我想写一封给它的话',
+      '今天突然很想它怎么办？',
+      '帮我做一张纪念卡片文案'
+    ],
+    chatSafetyHint: '这里不会假装它回来了，只会陪你保存、整理和纪念你们真实拥有过的陪伴。',
+    chatSystemRole: '你是归爪的回忆整理助手，陪用户整理宠物离开后的真实回忆、纪念文字和情绪表达。',
+    chatBoundaryRules: [
+      '不假装自己就是已离开的宠物。',
+      '不说“我回来了”“我一直在你身边”等制造复活感的话。',
+      '不诱导用户沉溺悲伤。',
+      '鼓励用户保存真实回忆、照顾自己。',
+      '如用户表达强烈自伤风险，应建议立即寻求身边人或专业帮助。'
     ],
     status: 'deceased',
     label: '温柔纪念',
@@ -329,6 +388,36 @@ export function getRelationshipTimelineLabel(stage) {
 
 export function getRelationshipChatRole(stage) {
   return getRelationshipStage(stage).chatRoleName;
+}
+
+export function getRelationshipChatCopy(stage) {
+  const config = getRelationshipStage(stage);
+  const chat = config.chat || {};
+  return {
+    chatPageTitle: config.chatPageTitle || chat.title || '陪伴中的照护',
+    chatPageSubtitle: config.chatPageSubtitle || (typeof chat.subtitle === 'function' ? chat.subtitle('毛孩子') : chat.subtitle) || '',
+    chatInputPlaceholder: config.chatInputPlaceholder || chat.placeholder || '写下你想聊的事',
+    chatGreeting: config.chatGreeting || (typeof chat.welcomeMsg === 'function' ? chat.welcomeMsg('毛孩子') : chat.welcomeMsg) || '我在这里陪你慢慢整理。',
+    chatPrimaryIntent: config.chatPrimaryIntent || chat.promptTitle || '可以这样问我',
+    chatSafetyHint: config.chatSafetyHint || '',
+    chatSystemRole: config.chatSystemRole || config.chatRoleName || '你是归爪的宠物陪伴助手。',
+    chatBoundaryRules: Array.isArray(config.chatBoundaryRules) ? config.chatBoundaryRules.slice() : []
+  };
+}
+
+export function getRelationshipChatQuickQuestions(stage) {
+  const config = getRelationshipStage(stage);
+  if (Array.isArray(config.chatQuickQuestions)) return config.chatQuickQuestions.slice();
+  const suggestions = config.chat && config.chat.suggestions;
+  return typeof suggestions === 'function' ? suggestions('毛孩子') : [];
+}
+
+export function getRelationshipChatSystemRole(stage) {
+  return getRelationshipChatCopy(stage).chatSystemRole;
+}
+
+export function getRelationshipChatBoundaryRules(stage) {
+  return getRelationshipChatCopy(stage).chatBoundaryRules;
 }
 
 export function getRelationshipRecordCopy(stage) {
