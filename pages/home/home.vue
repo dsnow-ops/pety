@@ -29,8 +29,9 @@
       <view class="home-content">
         <view class="today-row">
           <view>
-            <text class="section-kicker">TODAY</text>
+            <text class="section-kicker">{{ homeCopy.timelineLabel }}</text>
             <text class="section-title">{{ todayTitle }}</text>
+            <text class="section-subtitle">{{ homeSubtitle }}</text>
           </view>
           <view class="mode-chip">{{ modeText }}</view>
         </view>
@@ -58,7 +59,7 @@
               <text class="card-title">{{ relationshipConfig.home.insightTitle }}</text>
             </view>
             <button class="text-button" hover-class="text-button-hover" @click="openArchive">
-              <text>查看</text>
+              <text>{{ archiveButtonText }}</text>
               <uni-icons type="right" size="14" color="#8C7557"></uni-icons>
             </button>
           </view>
@@ -103,7 +104,7 @@
 import { getActivePet, updateActivePet } from '../../common/pet-store.js';
 import { formatDateKey, getDiaryRecord, getEventLabel, getMoodLabel, hasDiaryRecord } from '../../common/diary-store.js';
 import { formatPetAge, getNeuteredLabel, getPetProfile, getProfileCompletion, getSpeciesLabel } from '../../common/profile-store.js';
-import { getRelationshipConfig, setRelationshipTabBar } from '../../common/relationship-config.js';
+import { getRelationshipConfig, getRelationshipHomeCopy, setRelationshipTabBar } from '../../common/relationship-config.js';
 
 export default {
   data() {
@@ -125,6 +126,9 @@ export default {
     relationshipConfig() {
       return getRelationshipConfig(this.activePet && this.activePet.status);
     },
+    homeCopy() {
+      return getRelationshipHomeCopy(this.activePet && this.activePet.status, this.activePet || { name: this.petName });
+    },
     quickActions() {
       return this.relationshipConfig.home.quickActions;
     },
@@ -132,15 +136,20 @@ export default {
       return this.relationshipConfig.home.metricLabels;
     },
     statusText() {
-      if (!this.activePet) return '等待相遇';
-      return this.relationshipConfig.stageKicker;
+      if (!this.activePet) return this.homeCopy.emptyText;
+      return this.homeCopy.stageName || this.relationshipConfig.stageKicker;
+    },
+    homeSubtitle() {
+      return this.homeCopy.homeSubtitle;
+    },
+    archiveButtonText() {
+      return this.relationshipConfig.home.archiveButtonText || '查看';
     },
     modeText() {
       return this.mode === 'simple' ? '照片模式' : '2.5D 陪伴';
     },
     todayTitle() {
-      if (!this.activePet) return '先为一个生命建立入口';
-      return this.relationshipConfig.home.todayTitle(this.petName);
+      return this.activePet ? this.homeCopy.homeTitle : this.homeCopy.emptyText;
     },
     archiveTitle() {
       if (!this.activePet) return this.relationshipConfig.home.archiveTitleFallback;
@@ -151,10 +160,10 @@ export default {
       return `${species}${breed}`;
     },
     archiveDesc() {
-      if (!this.activePet) return '添加照片和名字后，首页会自动读取当前宠物数据。';
+      if (!this.activePet) return this.homeCopy.emptyText;
       if (this.profile.note) return this.profile.note;
       const completion = getProfileCompletion(this.profile);
-      return completion ? `档案完整度 ${completion}%，继续补充会让陪伴更贴近它。` : this.relationshipConfig.home.archiveDescEmpty;
+      return completion ? `档案完整度 ${completion}%，继续补充会让${this.homeCopy.stageShortName}更贴近它。` : this.homeCopy.emptyText;
     },
     updatedAtText() {
       if (!this.activePet) return '待补充';
@@ -175,7 +184,7 @@ export default {
     archiveLines() {
       if (!this.activePet) {
         return [
-          { label: '状态', value: '待创建' },
+          { label: '阶段', value: this.homeCopy.stageName },
           { label: '最近更新', value: '待补充' }
         ];
       }
@@ -184,7 +193,7 @@ export default {
         return [
           { label: '阶段', value: this.relationshipConfig.label },
           { label: '倾向', value: this.archiveTitle },
-          { label: this.relationshipConfig.home.diaryLabel, value: this.todayDiaryText },
+          { label: this.homeCopy.timelineLabel, value: this.todayDiaryText },
           { label: '档案完整', value: `${getProfileCompletion(this.profile)}%` },
           { label: '最近更新', value: this.updatedAtText }
         ];
@@ -192,9 +201,9 @@ export default {
 
       if (this.activePet.status === 'deceased') {
         return [
-          { label: '关系', value: this.relationshipConfig.label },
+          { label: '关系', value: this.homeCopy.stageName },
           { label: '记录', value: `${this.petStats.moments} 条` },
-          { label: this.relationshipConfig.home.diaryLabel, value: this.todayDiaryText },
+          { label: this.homeCopy.timelineLabel, value: this.todayDiaryText },
           { label: '信笺', value: `${this.petStats.chats} 次` },
           { label: '最近更新', value: this.updatedAtText }
         ];
@@ -204,7 +213,7 @@ export default {
         { label: '年龄', value: this.ageText },
         { label: '体重', value: this.profile.weight || '待补充' },
         { label: '绝育', value: this.neuteredText },
-        { label: this.relationshipConfig.home.diaryLabel, value: this.todayDiaryText },
+        { label: this.homeCopy.timelineLabel, value: this.todayDiaryText },
         { label: '最近更新', value: this.updatedAtText }
       ];
     }
@@ -572,6 +581,14 @@ export default {
   font-weight: 600;
   color: #302A23;
   line-height: 1.25;
+}
+
+.section-subtitle {
+  display: block;
+  margin-top: 8rpx;
+  color: #7C756B;
+  font-size: 23rpx;
+  line-height: 1.4;
 }
 
 .mode-chip {

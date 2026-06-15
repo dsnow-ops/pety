@@ -2,6 +2,20 @@ const DEFAULT_STATUS = 'current';
 
 const RELATIONSHIP_CONFIG = {
   current: {
+    stageKey: 'current',
+    stageName: '陪伴中',
+    stageShortName: '陪伴',
+    emotionalTone: '安定、清楚、温柔',
+    coreTask: '帮我记录和照顾好它',
+    homeTitle: name => `${name} 今天也在这里`,
+    homeSubtitle: name => `把 ${name} 的日常、档案和照护线索慢慢收好。`,
+    primaryActionText: '记录今天',
+    secondaryActionText: '和它聊聊',
+    timelineLabel: '陪伴记录',
+    chatRoleName: '宠物陪伴助手',
+    archiveLabel: '陪伴档案',
+    emptyText: '先为它建立一个入口，日常记录和照护会慢慢在这里汇合。',
+    themeTone: 'companion',
     status: 'current',
     label: '正在陪伴',
     shortLabel: '陪伴',
@@ -20,10 +34,12 @@ const RELATIONSHIP_CONFIG = {
     },
     home: {
       todayTitle: name => `${name} 今天也在这里`,
+      subtitle: name => `把 ${name} 的日常、档案和照护线索慢慢收好。`,
+      archiveButtonText: '查看档案',
       quickActions: [
+        { key: 'journal', icon: 'compose', title: '记录今天', desc: '今日片段' },
+        { key: 'chat', icon: 'chatbubble', title: '和它聊聊', desc: '温柔咨询' },
         { key: 'archive', icon: 'folder-add', title: '档案', desc: '身体与习惯' },
-        { key: 'journal', icon: 'compose', title: '日记', desc: '今日片段' },
-        { key: 'chat', icon: 'chatbubble', title: '问诊', desc: '温柔咨询' },
         { key: 'care', icon: 'home', title: '就医', desc: '医院与急诊' }
       ],
       insightKicker: 'COMPANION FILE',
@@ -57,6 +73,20 @@ const RELATIONSHIP_CONFIG = {
     }
   },
   future: {
+    stageKey: 'future',
+    stageName: '相遇前',
+    stageShortName: '相遇',
+    emotionalTone: '理性、轻柔、鼓励',
+    coreTask: '帮我准备好迎接它',
+    homeTitle: name => `${name} 的准备计划`,
+    homeSubtitle: () => '先确认时间、预算、环境和照护能力，再慢慢靠近新的生命。',
+    primaryActionText: '继续准备',
+    secondaryActionText: '生成未来形象',
+    timelineLabel: '准备记录',
+    chatRoleName: '养宠准备助手',
+    archiveLabel: '相遇计划',
+    emptyText: '可以先记录期待、顾虑和准备条件，不急着把答案一次想完。',
+    themeTone: 'preparation',
     status: 'future',
     label: '准备相遇',
     shortLabel: '备宠',
@@ -75,8 +105,10 @@ const RELATIONSHIP_CONFIG = {
     },
     home: {
       todayTitle: name => `${name} 的准备计划`,
+      subtitle: () => '先确认时间、预算、环境和照护能力，再慢慢靠近新的生命。',
+      archiveButtonText: '查看计划',
       quickActions: [
-        { key: 'chat', icon: 'chatbubble', title: '评估', desc: '适养判断' },
+        { key: 'chat', icon: 'chatbubble', title: '继续准备', desc: '适养判断' },
         { key: 'supplies', icon: 'checkbox', title: '清单', desc: '接宠准备' },
         { key: 'archive', icon: 'folder-add', title: '档案', desc: '偏好与计划' },
         { key: 'care', icon: 'home', title: '医院', desc: '预先准备' }
@@ -112,6 +144,20 @@ const RELATIONSHIP_CONFIG = {
     }
   },
   deceased: {
+    stageKey: 'deceased',
+    stageName: '纪念里',
+    stageShortName: '纪念',
+    emotionalTone: '克制、安静、抚慰',
+    coreTask: '帮我把它温柔留下来',
+    homeTitle: name => `${name} 仍被好好记得`,
+    homeSubtitle: name => `把关于 ${name} 的想念、片段和信慢慢收好。`,
+    primaryActionText: '写一段回忆',
+    secondaryActionText: '查看纪念册',
+    timelineLabel: '回忆记录',
+    chatRoleName: '回忆整理助手',
+    archiveLabel: '纪念册',
+    emptyText: '可以从一张照片、一句话或一个小习惯开始，慢慢把它留下来。',
+    themeTone: 'memory',
     status: 'deceased',
     label: '温柔纪念',
     shortLabel: '纪念',
@@ -130,8 +176,10 @@ const RELATIONSHIP_CONFIG = {
     },
     home: {
       todayTitle: name => `${name} 仍被好好记得`,
+      subtitle: name => `把关于 ${name} 的想念、片段和信慢慢收好。`,
+      archiveButtonText: '查看纪念册',
       quickActions: [
-        { key: 'letter', icon: 'email', title: '信笺', desc: '写给它' },
+        { key: 'letter', icon: 'email', title: '写一段回忆', desc: '写给它' },
         { key: 'memory', icon: 'heart', title: '回忆', desc: '整理片段' },
         { key: 'journal', icon: 'compose', title: '记录', desc: '今天想念' },
         { key: 'chat', icon: 'chatbubble', title: '陪伴', desc: '慢慢说' }
@@ -172,12 +220,51 @@ export function normalizeRelationshipStatus(status) {
   return RELATIONSHIP_CONFIG[status] ? status : DEFAULT_STATUS;
 }
 
+export function getRelationshipStage(stage) {
+  return RELATIONSHIP_CONFIG[normalizeRelationshipStatus(stage)];
+}
+
 export function getRelationshipConfig(status) {
-  return RELATIONSHIP_CONFIG[normalizeRelationshipStatus(status)];
+  return getRelationshipStage(status);
 }
 
 export function getRelationshipOptions() {
   return ['current', 'future', 'deceased'].map(status => RELATIONSHIP_CONFIG[status]);
+}
+
+function resolveCopy(copy, pet) {
+  if (typeof copy !== 'function') return copy;
+  const petName = pet && pet.name ? pet.name : '毛孩子';
+  return copy(petName, pet);
+}
+
+export function getRelationshipHomeCopy(stage, pet) {
+  const config = getRelationshipStage(stage);
+
+  return {
+    stageKey: config.stageKey,
+    stageName: config.stageName,
+    stageShortName: config.stageShortName,
+    emotionalTone: config.emotionalTone,
+    coreTask: config.coreTask,
+    homeTitle: resolveCopy(config.homeTitle || config.home.todayTitle, pet),
+    homeSubtitle: resolveCopy(config.homeSubtitle || config.home.subtitle, pet),
+    primaryActionText: config.primaryActionText,
+    secondaryActionText: config.secondaryActionText,
+    timelineLabel: config.timelineLabel,
+    chatRoleName: config.chatRoleName,
+    archiveLabel: config.archiveLabel,
+    emptyText: config.emptyText,
+    themeTone: config.themeTone
+  };
+}
+
+export function getRelationshipTimelineLabel(stage) {
+  return getRelationshipStage(stage).timelineLabel;
+}
+
+export function getRelationshipChatRole(stage) {
+  return getRelationshipStage(stage).chatRoleName;
 }
 
 export function setRelationshipTabBar(status) {
