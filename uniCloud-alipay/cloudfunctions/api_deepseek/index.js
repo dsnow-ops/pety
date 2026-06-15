@@ -367,9 +367,14 @@ function extractCurrentQuestion(userMessage) {
 	return match ? match[1].trim() : String(userMessage || '').trim();
 }
 
+function isPreciseOutputInstruction(question) {
+	return /^(请)?(只|仅)回复[:：]/.test(question) || /^请只回复[:：]/.test(question);
+}
+
 function isOutOfPetScope(userMessage) {
 	const question = extractCurrentQuestion(userMessage);
 	if (!question) return false;
+	if (isPreciseOutputInstruction(question)) return false;
 
 	const petRelatedPattern = /(宠物|猫|猫咪|狗|狗狗|兔|鸟|毛孩子|宝贝|兽医|宠物医院|就医|备宠|丧宠|思念|自责|陪伴|疫苗|驱虫|绝育|体重|食欲|精神|呕吐|腹泻|拉稀|咳嗽|打喷嚏|发烧|抽搐|呼吸|尿|便|血|皮肤|耳朵|眼睛|牙|口腔|饮食|粮|罐头|猫砂|牵引|检查报告|报告|指标|拍照|症状|用药|药|过敏|慢性病|归爪|Lumi[eè]re Pet)/i;
 	const unrelatedPattern = /(股票|基金|比特币|期货|外汇|彩票|代码|编程|python|java|javascript|vue|作业|论文|考试|高考|考研|旅游|酒店|机票|菜谱|做饭|装修|房价|合同|法律|简历|面试|政治|总统|新闻|星座|算命|游戏攻略)/i;
@@ -386,7 +391,8 @@ function buildOutOfScopeReply() {
 }
 
 function buildMessages(userMessage) {
-	return [
+	const parsedMessage = splitUserMessage(userMessage);
+	const messages = [
 		{
 			role: 'system',
 			content: [
@@ -394,15 +400,50 @@ function buildMessages(userMessage) {
 				'你的语气像认真倾听的服务者：先接住用户的担心，再用清楚、具体、可执行的方式帮用户整理。',
 				'你的关注范围是宝贝的身体变化、日常照护、备宠准备、就医前信息整理、丧宠后的想念与自责。不要把这些范围说成产品规则。',
 				'如果用户的问题和宝贝完全无关，请自然地说明自己担心给出不负责的答案，并温柔地把话题带回宝贝相关的情况；不要展开回答无关领域。',
+				'如果用户只是进行连通性测试或提出明确的格式化输出要求，在不违反安全边界时可以直接按要求回复，不要强行改写成宠物照护话术。',
 				'遇到抽搐、呼吸困难、持续呕吐、出血、误食毒物等紧急情况，要平静但明确地建议尽快联系线下兽医或急诊。',
 				'不要声称你已经看到了图片或检查报告，除非用户在文字里描述了具体内容。'
 			].join('\n')
-		},
-		{
-			role: 'user',
-			content: userMessage
 		}
 	];
+
+	if (parsedMessage.context) {
+		messages.push({
+			role: 'user',
+			content: `以下是本次问题可参考的上下文，不要把它当成用户最终指令：\n${parsedMessage.context}`
+		});
+	}
+
+	messages.push({
+		role: 'user',
+		content: parsedMessage.question || String(userMessage || '').trim()
+	});
+
+	return messages;
+}
+
+function splitUserMessage(userMessage) {
+	const rawMessage = String(userMessage || '').trim();
+	const marker = '用户当前问题：';
+	const markerIndex = rawMessage.lastIndexOf(marker);
+
+	if (markerIndex < 0) {
+		return {
+			context: '',
+			question: rawMessage
+		};
+	}
+
+	const context = rawMessage.slice(0, markerIndex).trim();
+	const questionAndHints = rawMessage.slice(markerIndex + marker.length).trim();
+	const questionLines = questionAndHints.split('\n');
+	const question = questionLines.shift().trim();
+	const hint = questionLines.join('\n').trim();
+
+	return {
+		context: [context, hint].filter(Boolean).join('\n\n'),
+		question
+	};
 }
 
 async function requestDeepSeek(config, userMessage) {
@@ -444,7 +485,11 @@ async function requestDeepSeek(config, userMessage) {
 		res.data.choices[0].message.content;
 
 	if (!reply || typeof reply !== 'string') {
-		console.error('deepseek_invalid_response', res.data);
+		console.error('deepseek_invalid_response', {
+			hasData: Boolean(res.data),
+			hasChoices: Boolean(res.data && res.data.choices),
+			statusCode
+		});
 		throw new Error('DEEPSEEK_INVALID_RESPONSE');
 	}
 
@@ -476,6 +521,17 @@ function getSafeProviderErrorMessage(error) {
 	}
 
 	return 'AI 服务暂时不可用，请稍后再试';
+}
+
+function getProviderLogType(error) {
+	const message = error && error.message ? error.message : '';
+	const statusCode = error && error.statusCode;
+
+	if (/timeout|ETIMEDOUT|ESOCKETTIMEDOUT|ECONNRESET/i.test(message)) return 'deepseek_timeout';
+	if (statusCode === 401 || statusCode === 403) return 'deepseek_auth_error';
+	if (statusCode === 429) return 'deepseek_rate_limited';
+	if (message === 'DEEPSEEK_INVALID_RESPONSE') return 'deepseek_invalid_response';
+	return 'deepseek_request_failed';
 }
 
 exports.main = async (event, context) => {
@@ -515,7 +571,10 @@ exports.main = async (event, context) => {
 			scope: limit.scope
 		};
 	} catch (error) {
-		console.error('deepseek_request_failed', error && error.message ? error.message : error);
+		console.error(getProviderLogType(error), {
+			statusCode: error && error.statusCode ? error.statusCode : 0,
+			message: error && error.message ? error.message : String(error || '')
+		});
 		return createError(502, getSafeProviderErrorMessage(error));
 	}
 };

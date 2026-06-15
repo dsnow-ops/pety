@@ -5,15 +5,15 @@
     "baseUrl": "https://api.deepseek.com",
     "model": "deepseek-chat",
     "temperature": 0.7,
-    "maxTokens": 700,
+    "maxTokens": 500,
     "requestTimeoutMs": 15000
   },
   "security": {
-    "maxUserMessageChars": 800
+    "maxUserMessageChars": 600
   },
   "rateLimit": {
     "enabled": true,
-    "freeDailyLimit": 3,
+    "freeDailyLimit": 10,
     "plusMonthlyLimit": 300,
     "membershipLookupEnabled": false,
     "collection": "deepseek_rate_limits",
