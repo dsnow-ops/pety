@@ -17,6 +17,10 @@
         <view class="pet-copy">
           <text class="pet-name">{{ activePet.name }}</text>
           <text class="pet-desc">档案越完整，问诊时越能少说重复的话</text>
+          <view class="stage-row">
+            <text class="stage-pill">{{ relationshipConfig.stageName }}</text>
+            <text class="stage-desc">{{ relationshipConfig.coreTask }}</text>
+          </view>
         </view>
         <view class="completion-ring">
           <text>{{ completion }}%</text>
@@ -155,6 +159,7 @@
 <script>
 import { getActivePet } from '../../common/pet-store.js';
 import { getPetProfile, getProfileCompletion, savePetProfile } from '../../common/profile-store.js';
+import { getPetRelationshipStage, getRelationshipConfig } from '../../common/relationship-config.js';
 
 export default {
   data() {
@@ -181,6 +186,12 @@ export default {
     };
   },
   computed: {
+    relationshipStage() {
+      return getPetRelationshipStage(this.activePet);
+    },
+    relationshipConfig() {
+      return getRelationshipConfig(this.relationshipStage);
+    },
     completion() {
       return getProfileCompletion(this.form);
     }
@@ -336,6 +347,29 @@ export default {
   color: #8F877A;
   font-size: 23rpx;
   line-height: 1.45;
+}
+
+.stage-row {
+  margin-top: 12rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+.stage-pill {
+  padding: 7rpx 14rpx;
+  border-radius: 999rpx;
+  background: #F1ECE3;
+  color: #8C7557;
+  font-size: 20rpx;
+  line-height: 1.2;
+}
+
+.stage-desc {
+  color: #8F877A;
+  font-size: 21rpx;
+  line-height: 1.3;
 }
 
 .completion-ring {

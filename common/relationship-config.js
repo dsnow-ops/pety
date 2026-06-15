@@ -16,6 +16,20 @@ const RELATIONSHIP_CONFIG = {
     archiveLabel: '陪伴档案',
     emptyText: '先为它建立一个入口，日常记录和照护会慢慢在这里汇合。',
     themeTone: 'companion',
+    recordPageTitle: '陪伴记录',
+    recordPageSubtitle: '把今天的状态、健康和小事都留下来',
+    recordPrimaryActionText: '记录今天',
+    recordEmptyTitle: '今天还没有记录',
+    recordEmptyText: '可以记录饮食、精神、体重、疫苗、驱虫或一次小小的陪伴',
+    recordTypeLabel: '记录类型',
+    recordTypes: [
+      { key: 'daily', label: '日常' },
+      { key: 'health', label: '健康' },
+      { key: 'weight', label: '体重' },
+      { key: 'vaccine', label: '疫苗' },
+      { key: 'deworm', label: '驱虫' },
+      { key: 'abnormal', label: '异常观察' }
+    ],
     status: 'current',
     label: '正在陪伴',
     shortLabel: '陪伴',
@@ -87,6 +101,19 @@ const RELATIONSHIP_CONFIG = {
     archiveLabel: '相遇计划',
     emptyText: '可以先记录期待、顾虑和准备条件，不急着把答案一次想完。',
     themeTone: 'preparation',
+    recordPageTitle: '相遇前的准备',
+    recordPageSubtitle: '把迎接它之前的每一步，都慢慢准备好',
+    recordPrimaryActionText: '记一项准备',
+    recordEmptyTitle: '还没有准备记录',
+    recordEmptyText: '可以从用品、预算、学习或第一次见面的计划开始',
+    recordTypeLabel: '准备类型',
+    recordTypes: [
+      { key: 'prepare', label: '准备事项' },
+      { key: 'budget', label: '预算计划' },
+      { key: 'supplies', label: '用品清单' },
+      { key: 'learn', label: '养宠学习' },
+      { key: 'countdown', label: '相遇倒计时' }
+    ],
     status: 'future',
     label: '准备相遇',
     shortLabel: '备宠',
@@ -158,6 +185,19 @@ const RELATIONSHIP_CONFIG = {
     archiveLabel: '纪念册',
     emptyText: '可以从一张照片、一句话或一个小习惯开始，慢慢把它留下来。',
     themeTone: 'memory',
+    recordPageTitle: '回忆记录',
+    recordPageSubtitle: '把想念、照片和故事，温柔地留在这里',
+    recordPrimaryActionText: '写一段回忆',
+    recordEmptyTitle: '还没有回忆记录',
+    recordEmptyText: '可以从一张照片、一个习惯、一次陪伴或一句想对它说的话开始',
+    recordTypeLabel: '回忆类型',
+    recordTypes: [
+      { key: 'memory', label: '回忆' },
+      { key: 'photo', label: '照片' },
+      { key: 'letter', label: '给它的话' },
+      { key: 'anniversary', label: '纪念日' },
+      { key: 'story', label: '共同故事' }
+    ],
     status: 'deceased',
     label: '温柔纪念',
     shortLabel: '纪念',
@@ -220,8 +260,32 @@ export function normalizeRelationshipStatus(status) {
   return RELATIONSHIP_CONFIG[status] ? status : DEFAULT_STATUS;
 }
 
+export function normalizeRelationshipStage(stage) {
+  return normalizeRelationshipStatus(stage);
+}
+
+export function getPetRelationshipStage(pet = {}) {
+  const source = pet || {};
+  return normalizeRelationshipStage(
+    source.relationshipStage ||
+    source.status ||
+    source.petStage ||
+    source.stage
+  );
+}
+
+export function withRelationshipStage(pet = {}, stage) {
+  const source = pet || {};
+  const relationshipStage = normalizeRelationshipStage(stage || getPetRelationshipStage(source));
+  return {
+    ...source,
+    relationshipStage,
+    status: relationshipStage
+  };
+}
+
 export function getRelationshipStage(stage) {
-  return RELATIONSHIP_CONFIG[normalizeRelationshipStatus(stage)];
+  return RELATIONSHIP_CONFIG[normalizeRelationshipStage(stage)];
 }
 
 export function getRelationshipConfig(status) {
@@ -265,6 +329,28 @@ export function getRelationshipTimelineLabel(stage) {
 
 export function getRelationshipChatRole(stage) {
   return getRelationshipStage(stage).chatRoleName;
+}
+
+export function getRelationshipRecordCopy(stage) {
+  const config = getRelationshipStage(stage);
+  return {
+    recordPageTitle: config.recordPageTitle,
+    recordPageSubtitle: config.recordPageSubtitle,
+    recordPrimaryActionText: config.recordPrimaryActionText,
+    recordEmptyTitle: config.recordEmptyTitle,
+    recordEmptyText: config.recordEmptyText,
+    recordTypeLabel: config.recordTypeLabel
+  };
+}
+
+export function getRelationshipRecordTypes(stage) {
+  const config = getRelationshipStage(stage);
+  return Array.isArray(config.recordTypes) ? config.recordTypes.slice() : [];
+}
+
+export function getRelationshipRecordTypeLabel(stage, type) {
+  const recordType = getRelationshipRecordTypes(stage).find(item => item.key === type);
+  return recordType ? recordType.label : '记录';
 }
 
 export function setRelationshipTabBar(status) {

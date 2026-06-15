@@ -81,7 +81,7 @@
 
 <script>
 import { addPet, canCreatePet, getActivePet, updateActivePet } from '../../common/pet-store.js';
-import { getRelationshipConfig, getRelationshipOptions } from '../../common/relationship-config.js';
+import { getPetRelationshipStage, getRelationshipConfig, getRelationshipOptions, normalizeRelationshipStage, withRelationshipStage } from '../../common/relationship-config.js';
 
 export default {
   data() {
@@ -125,7 +125,7 @@ export default {
     this.activePetId = activePet.id;
     this.petName = activePet.name;
     this.petMode = activePet.mode;
-    this.petStatus = activePet.status || 'current';
+    this.petStatus = getPetRelationshipStage(activePet);
     this.tempPhoto = activePet.photo;
   },
   methods: {
@@ -162,10 +162,16 @@ export default {
 
       this.isAwakening = true;
       const photo = this.tempPhoto || '/static/pet.png';
+      const relationshipStage = normalizeRelationshipStage(this.petStatus);
+      const petPatch = withRelationshipStage({
+        name: petName,
+        photo,
+        mode: this.petMode
+      }, relationshipStage);
 
       const pet = (this.activePetId
-        ? updateActivePet({ name: petName, photo, mode: this.petMode, status: this.petStatus })
-        : null) || addPet({ name: petName, photo, mode: this.petMode, status: this.petStatus });
+        ? updateActivePet(petPatch)
+        : null) || addPet(petPatch);
 
       this.petName = pet.name;
 

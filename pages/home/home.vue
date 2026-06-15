@@ -104,7 +104,7 @@
 import { getActivePet, updateActivePet } from '../../common/pet-store.js';
 import { formatDateKey, getDiaryRecord, getEventLabel, getMoodLabel, hasDiaryRecord } from '../../common/diary-store.js';
 import { formatPetAge, getNeuteredLabel, getPetProfile, getProfileCompletion, getSpeciesLabel } from '../../common/profile-store.js';
-import { getRelationshipConfig, getRelationshipHomeCopy, setRelationshipTabBar } from '../../common/relationship-config.js';
+import { getPetRelationshipStage, getRelationshipConfig, getRelationshipHomeCopy, setRelationshipTabBar } from '../../common/relationship-config.js';
 
 export default {
   data() {
@@ -124,10 +124,13 @@ export default {
   },
   computed: {
     relationshipConfig() {
-      return getRelationshipConfig(this.activePet && this.activePet.status);
+      return getRelationshipConfig(this.activeRelationshipStage);
+    },
+    activeRelationshipStage() {
+      return getPetRelationshipStage(this.activePet);
     },
     homeCopy() {
-      return getRelationshipHomeCopy(this.activePet && this.activePet.status, this.activePet || { name: this.petName });
+      return getRelationshipHomeCopy(this.activeRelationshipStage, this.activePet || { name: this.petName });
     },
     quickActions() {
       return this.relationshipConfig.home.quickActions;
@@ -153,8 +156,8 @@ export default {
     },
     archiveTitle() {
       if (!this.activePet) return this.relationshipConfig.home.archiveTitleFallback;
-      if (this.activePet.status === 'deceased') return this.profile.note ? '一份被收好的想念' : '一份安静的纪念';
-      if (this.activePet.status === 'future' && !this.profile.breed) return '还在慢慢确认';
+      if (this.activeRelationshipStage === 'deceased') return this.profile.note ? '一份被收好的想念' : '一份安静的纪念';
+      if (this.activeRelationshipStage === 'future' && !this.profile.breed) return '还在慢慢确认';
       const species = getSpeciesLabel(this.profile.species);
       const breed = this.profile.breed ? ` · ${this.profile.breed}` : '';
       return `${species}${breed}`;
@@ -189,7 +192,7 @@ export default {
         ];
       }
 
-      if (this.activePet.status === 'future') {
+      if (this.activeRelationshipStage === 'future') {
         return [
           { label: '阶段', value: this.relationshipConfig.label },
           { label: '倾向', value: this.archiveTitle },
@@ -199,7 +202,7 @@ export default {
         ];
       }
 
-      if (this.activePet.status === 'deceased') {
+      if (this.activeRelationshipStage === 'deceased') {
         return [
           { label: '关系', value: this.homeCopy.stageName },
           { label: '记录', value: `${this.petStats.moments} 条` },
@@ -225,7 +228,7 @@ export default {
     loadHomeData() {
       const activePet = getActivePet();
       this.activePet = activePet;
-      setRelationshipTabBar(activePet && activePet.status);
+      setRelationshipTabBar(getPetRelationshipStage(activePet));
 
       if (!activePet) {
         this.petName = '毛孩子';

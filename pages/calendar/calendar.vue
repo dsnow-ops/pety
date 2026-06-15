@@ -5,8 +5,8 @@
         <uni-icons type="left" size="22" color="#302A23"></uni-icons>
       </button>
       <view class="title-copy">
-        <text class="title-kicker">DAILY TRACE</text>
-        <text class="title-main">日历记录</text>
+        <text class="title-kicker">{{ relationshipConfig.stageName }}</text>
+        <text class="title-main">{{ recordCopy.recordPageTitle }}</text>
       </view>
       <button class="icon-button" hover-class="icon-button-hover" @click="goToday">
         <uni-icons type="calendar" size="21" color="#302A23"></uni-icons>
@@ -17,7 +17,7 @@
       <image :src="activePet.photo || activePet.avatar" class="pet-photo" mode="aspectFill"></image>
       <view class="pet-copy">
         <text class="pet-name">{{ activePet.name }}</text>
-        <text class="pet-desc">记录越连续，问诊时越不必从头说起</text>
+        <text class="pet-desc">{{ recordCopy.recordPageSubtitle }}</text>
       </view>
     </view>
 
@@ -65,7 +65,7 @@
       <view class="record-head">
         <view>
           <text class="record-kicker">{{ selectedDateLabel }}</text>
-          <text class="record-title">这一天怎么样</text>
+          <text class="record-title">{{ recordTitle }}</text>
         </view>
         <text class="record-state" :style="{ color: moodColor(form.mood), background: moodSoftColor(form.mood) }">{{ currentMoodLabel }}</text>
       </view>
@@ -83,7 +83,7 @@
       </view>
 
       <view class="event-section">
-        <text class="field-title">生活状态</text>
+        <text class="field-title">{{ recordCopy.recordTypeLabel }}</text>
         <view class="event-grid">
           <view
             v-for="event in eventOptions"
@@ -101,7 +101,7 @@
         <textarea
           class="note-input"
           v-model="form.note"
-          placeholder="例如：早上吃得少，下午吐了一次，精神一般。"
+          :placeholder="recordCopy.recordEmptyText"
           placeholder-style="color:#AAA195"
           maxlength="500"
           :show-confirm-bar="false"
@@ -109,7 +109,7 @@
       </view>
 
       <button class="save-btn" hover-class="save-btn-hover" @click="saveRecord">
-        <text>保存这一天</text>
+        <text>{{ recordCopy.recordPrimaryActionText }}</text>
       </button>
     </view>
   </view>
@@ -126,6 +126,13 @@ import {
   hasDiaryRecord,
   saveDiaryRecord
 } from '../../common/diary-store.js';
+import {
+  getPetRelationshipStage,
+  getRelationshipConfig,
+  getRelationshipRecordCopy,
+  getRelationshipRecordTypeLabel,
+  getRelationshipRecordTypes
+} from '../../common/relationship-config.js';
 
 export default {
   data() {
@@ -143,21 +150,8 @@ export default {
         { key: 'uneasy', label: '不安' },
         { key: 'sick', label: '不适' }
       ],
-      eventOptions: [
-        { key: 'appetite_good', label: '食欲正常' },
-        { key: 'appetite_low', label: '食欲下降' },
-        { key: 'water_more', label: '饮水增多' },
-        { key: 'stool_normal', label: '排便正常' },
-        { key: 'stool_soft', label: '软便' },
-        { key: 'diarrhea', label: '腹泻' },
-        { key: 'vomit', label: '呕吐' },
-        { key: 'cough', label: '咳嗽' },
-        { key: 'itch', label: '抓挠' },
-        { key: 'lethargy', label: '精神差' },
-        { key: 'medicine', label: '用药' },
-        { key: 'vaccine', label: '疫苗/驱虫' }
-      ],
       form: {
+        type: '',
         mood: 'calm',
         events: [],
         note: ''
@@ -165,6 +159,28 @@ export default {
     };
   },
   computed: {
+    relationshipStage() {
+      return getPetRelationshipStage(this.activePet);
+    },
+    relationshipConfig() {
+      return getRelationshipConfig(this.relationshipStage);
+    },
+    recordCopy() {
+      return getRelationshipRecordCopy(this.relationshipStage);
+    },
+    eventOptions() {
+      const options = getRelationshipRecordTypes(this.relationshipStage);
+      const knownKeys = options.map(item => item.key);
+      const selectedKeys = [this.form.type].concat(this.form.events || []).filter(Boolean);
+      const legacyOptions = selectedKeys
+        .filter(key => !knownKeys.includes(key))
+        .filter((key, index, list) => list.indexOf(key) === index)
+        .map(key => ({
+          key,
+          label: this.getRecordTypeLabel(key)
+        }));
+      return options.concat(legacyOptions);
+    },
     monthTitle() {
       return `${this.currentMonth.getFullYear()} 年 ${this.currentMonth.getMonth() + 1} 月`;
     },
@@ -175,6 +191,12 @@ export default {
     },
     currentMoodLabel() {
       return getMoodLabel(this.form.mood);
+    },
+    selectedHasRecord() {
+      return hasDiaryRecord(this.diaryMap[this.selectedDateKey]);
+    },
+    recordTitle() {
+      return this.selectedHasRecord ? this.recordCopy.recordPrimaryActionText : this.recordCopy.recordEmptyTitle;
     },
     calendarDays() {
       const year = this.currentMonth.getFullYear();
@@ -217,6 +239,7 @@ export default {
       if (!this.activePetId) return;
       const record = getDiaryRecord(this.activePetId, this.selectedDateKey);
       this.form = {
+        type: record.type,
         mood: record.mood,
         events: record.events.slice(),
         note: record.note
@@ -232,6 +255,10 @@ export default {
     moodSoftColor(mood) {
       return `${getMoodColor(mood)}18`;
     },
+    getRecordTypeLabel(type) {
+      const label = getRelationshipRecordTypeLabel(this.relationshipStage, type);
+      return label === '记录' ? getEventLabel(type) : label;
+    },
     selectDate(item) {
       this.selectedDateKey = item.dateKey;
       this.loadSelectedRecord();
@@ -246,7 +273,7 @@ export default {
       this.loadSelectedRecord();
     },
     isEventSelected(key) {
-      return this.form.events.includes(key);
+      return this.form.type === key || this.form.events.includes(key);
     },
     toggleEvent(key) {
       if (this.isEventSelected(key)) {

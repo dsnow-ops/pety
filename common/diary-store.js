@@ -73,6 +73,7 @@ export function normalizeDiaryRecord(rawRecord = {}) {
 
   return {
     date: rawRecord.date || '',
+    type: typeof rawRecord.type === 'string' ? rawRecord.type : '',
     mood: MOOD_LABELS[rawRecord.mood] ? rawRecord.mood : 'calm',
     events,
     note: typeof rawRecord.note === 'string' ? rawRecord.note : '',

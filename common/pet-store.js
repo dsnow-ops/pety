@@ -1,3 +1,5 @@
+import { getPetRelationshipStage } from './relationship-config.js';
+
 const PET_LIST_KEY = 'my_pets_list';
 const ACTIVE_PET_ID_KEY = 'current_active_pet_id';
 const MEMBERSHIP_PLAN_KEY = 'pety_membership_plan';
@@ -24,6 +26,7 @@ function normalizePet(rawPet = {}) {
   const now = Date.now();
   const photo = rawPet.photo || rawPet.avatar || rawPet.petPhoto || DEFAULT_PET_PHOTO;
   const createdAt = rawPet.createdAt || now;
+  const relationshipStage = getPetRelationshipStage(rawPet);
 
   return {
     id: rawPet.id || createPetId(),
@@ -31,7 +34,8 @@ function normalizePet(rawPet = {}) {
     avatar: photo,
     photo,
     mode: normalizeMode(rawPet.mode || rawPet.petMode),
-    status: normalizeStatus(rawPet.status),
+    relationshipStage,
+    status: normalizeStatus(relationshipStage),
     createdAt,
     updatedAt: rawPet.updatedAt || createdAt
   };
