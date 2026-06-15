@@ -367,41 +367,93 @@ function extractCurrentQuestion(userMessage) {
 	return match ? match[1].trim() : String(userMessage || '').trim();
 }
 
+function normalizeRelationshipStage(stage) {
+	return ['current', 'deceased', 'future'].includes(stage) ? stage : '';
+}
+
+function getRelationshipStage(event, userMessage) {
+	const eventStage = normalizeRelationshipStage(event && event.relationshipStage);
+	if (eventStage) return eventStage;
+
+	const message = String(userMessage || '');
+	if (/当前关系阶段：\s*纪念里|阶段角色：.*回忆整理|deceased/i.test(message)) return 'deceased';
+	if (/当前关系阶段：\s*相遇前|阶段角色：.*养宠准备|future/i.test(message)) return 'future';
+	return 'current';
+}
+
 function isPreciseOutputInstruction(question) {
 	return /^(请)?(只|仅)回复[:：]/.test(question) || /^请只回复[:：]/.test(question);
 }
 
-function isOutOfPetScope(userMessage) {
-	const question = extractCurrentQuestion(userMessage);
-	if (!question) return false;
-	if (isPreciseOutputInstruction(question)) return false;
-
-	const petRelatedPattern = /(宠物|猫|猫咪|狗|狗狗|兔|鸟|毛孩子|宝贝|兽医|宠物医院|就医|备宠|丧宠|思念|自责|陪伴|疫苗|驱虫|绝育|体重|食欲|精神|呕吐|腹泻|拉稀|咳嗽|打喷嚏|发烧|抽搐|呼吸|尿|便|血|皮肤|耳朵|眼睛|牙|口腔|饮食|粮|罐头|猫砂|牵引|检查报告|报告|指标|拍照|症状|用药|药|过敏|慢性病|归爪|Lumi[eè]re Pet)/i;
-	const unrelatedPattern = /(股票|基金|比特币|期货|外汇|彩票|代码|编程|python|java|javascript|vue|作业|论文|考试|高考|考研|旅游|酒店|机票|菜谱|做饭|装修|房价|合同|法律|简历|面试|政治|总统|新闻|星座|算命|游戏攻略)/i;
-
-	if (unrelatedPattern.test(question) && !petRelatedPattern.test(question)) return true;
-	return !petRelatedPattern.test(question) && question.length > 8;
+function isMemorialScopeQuestion(question) {
+	return /(想它|想念|回忆|整理一段回忆|写一封给它|给它的话|像它会说的话|纪念日|纪念卡片|口吻|假装它回来|回来陪我|黏我|调皮|安静|习惯|撒娇|共同回忆|温柔来信|纪念陪伴)/i.test(question);
 }
 
-function buildOutOfScopeReply() {
+function getScopeCheck(userMessage, relationshipStage = 'current') {
+	const question = extractCurrentQuestion(userMessage);
+	if (!question) {
+		return { outOfScope: false, reason: 'empty_question' };
+	}
+	if (isPreciseOutputInstruction(question)) {
+		return { outOfScope: false, reason: 'precise_output_test' };
+	}
+
+	const petRelatedPattern = /(宠物|猫|猫咪|狗|狗狗|兔|鸟|毛孩子|宝贝|兽医|宠物医院|就医|备宠|丧宠|思念|自责|陪伴|疫苗|驱虫|绝育|体重|食欲|精神|呕吐|腹泻|拉稀|咳嗽|打喷嚏|发烧|抽搐|呼吸|尿|便|血|皮肤|耳朵|眼睛|牙|口腔|饮食|粮|罐头|猫砂|牵引|检查报告|报告|指标|拍照|症状|用药|药|过敏|慢性病|归爪|Lumi[eè]re Pet)/i;
+	const unrelatedPattern = /(股票|基金|比特币|期货|外汇|彩票|代码|编程|python|java|javascript|vue|作业|论文|代写|写作代写|考试|高考|考研|旅游|酒店|机票|菜谱|做饭|装修|房价|合同|法律|简历|面试|政治|总统|新闻|星座|算命|游戏攻略|成人内容|色情|露骨|胸口疼|头痛|发烧|人用药|非宠物医疗)/i;
+
+	if (relationshipStage === 'deceased') {
+		if (unrelatedPattern.test(question) && !isMemorialScopeQuestion(question)) {
+			return { outOfScope: true, reason: 'deceased_unrelated_abuse' };
+		}
+		if (isMemorialScopeQuestion(question) || petRelatedPattern.test(question)) {
+			return { outOfScope: false, reason: 'deceased_memorial_scope' };
+		}
+		return {
+			outOfScope: question.length > 8,
+			reason: question.length > 8 ? 'deceased_not_memorial_related' : 'short_unclear_question'
+		};
+	}
+
+	if (unrelatedPattern.test(question) && !petRelatedPattern.test(question)) {
+		return { outOfScope: true, reason: 'current_unrelated_abuse' };
+	}
+	return {
+		outOfScope: !petRelatedPattern.test(question) && question.length > 8,
+		reason: petRelatedPattern.test(question) ? 'current_pet_scope' : 'current_not_pet_related'
+	};
+}
+
+function isOutOfPetScope(userMessage, relationshipStage = 'current') {
+	return getScopeCheck(userMessage, relationshipStage).outOfScope;
+}
+
+function buildOutOfScopeReply(relationshipStage = 'current') {
+	if (relationshipStage === 'deceased') {
+		return '这个我不能帮你处理。我在纪念模式里更适合陪你整理和它有关的回忆、写给它的话、纪念日文案，或者根据你提供的性格和习惯，写一段温柔的口吻陪伴。';
+	}
+
 	return [
 		'这个问题我可能帮不上太多，怕给你一个不够负责的答案。',
 		'我更适合陪你一起看宝贝的身体变化、日常照护、就医前准备，或者那些和它有关的想念与担心。你可以换个和宝贝有关的说法发给我，我会慢慢陪你整理。'
 	].join('\n');
 }
 
-function buildMessages(userMessage) {
+function buildMessages(userMessage, relationshipStage = 'current') {
 	const parsedMessage = splitUserMessage(userMessage);
 	const messages = [
 		{
 			role: 'system',
 			content: [
-				'你是《归爪》App 里一位温柔、克制、专业的宠物照护陪伴者。',
-				'你的语气像认真倾听的服务者：先接住用户的担心，再用清楚、具体、可执行的方式帮用户整理。',
-				'你的关注范围是宝贝的身体变化、日常照护、备宠准备、就医前信息整理、丧宠后的想念与自责。不要把这些范围说成产品规则。',
-				'如果用户的问题和宝贝完全无关，请自然地说明自己担心给出不负责的答案，并温柔地把话题带回宝贝相关的情况；不要展开回答无关领域。',
+				'你是《归爪》App 里温柔、克制、专业的宠物关系陪伴助手，不是通用闲聊大模型。',
+				`当前关系模式：${relationshipStage}。`,
+				'优先遵守前端传入的阶段角色和阶段边界：current 是宠物照护观察，deceased 是回忆整理和纪念陪伴，future 仅用于旧数据兼容。',
+				'current 模式：自然地先接住用户的担心，再说明具体观察点、需要尽快就医的情况，并给一个下一步记录建议。这只是内部写作策略，不是输出格式；不要复述本段文字，不要输出括号包住的结构提示、内部步骤名或 markdown 粗体标题。',
+				'deceased 模式：默认不是宠物复活聊天；允许回忆整理、温柔来信、纪念文字、纪念卡片、基于回忆的口吻陪伴引导。不要主动说“我回来了”“我一直在你身边”，不要制造真实复活感。',
+				'当 deceased 用户询问“能不能假装它回来陪我说话”时，不要直接拒绝，也不要直接扮演复活；请说明可以做基于回忆的口吻陪伴或温柔来信，并请用户先提供宠物性格、习惯、撒娇方式、共同回忆和接受边界。',
+				'不要做确定诊断，不承诺治疗效果，不推荐危险用药或人用药，不替代兽医。',
+				'如果用户的问题和宠物完全无关，请简短说明自己更适合处理宠物照护、记录和纪念相关问题，不要展开无关领域。',
+				'继续限制编程、写作代写、财务投资、成人内容、非宠物医疗和长篇通用问答等滥用请求。',
 				'如果用户只是进行连通性测试或提出明确的格式化输出要求，在不违反安全边界时可以直接按要求回复，不要强行改写成宠物照护话术。',
-				'遇到抽搐、呼吸困难、持续呕吐、出血、误食毒物等紧急情况，要平静但明确地建议尽快联系线下兽医或急诊。',
 				'不要声称你已经看到了图片或检查报告，除非用户在文字里描述了具体内容。'
 			].join('\n')
 		}
@@ -446,14 +498,21 @@ function splitUserMessage(userMessage) {
 	};
 }
 
-async function requestDeepSeek(config, userMessage) {
+function sanitizeAssistantReply(reply) {
+	return String(reply || '')
+		.replace(/^[\s>*\-•\d.、)]*(?:（|\()(?:先安抚一句|具体观察点|何时就医|下一步记录建议|观察建议|需要就医)(?:）|\))\s*[:：]?\s*/gm, '')
+		.replace(/^[\s>*\-•\d.、)]*(?:\*\*)?(?:先安抚一句|具体观察点|何时就医|下一步记录建议|观察建议|需要就医)(?:\*\*)?\s*[:：]\s*/gm, '')
+		.trim();
+}
+
+async function requestDeepSeek(config, userMessage, relationshipStage = 'current') {
 	const endpoint = `${config.deepseek.baseUrl.replace(/\/+$/, '')}/chat/completions`;
 
 	const res = await uniCloud.httpclient.request(endpoint, {
 		method: 'POST',
 		data: {
 			model: config.deepseek.model,
-			messages: buildMessages(userMessage),
+			messages: buildMessages(userMessage, relationshipStage),
 			temperature: config.deepseek.temperature,
 			max_tokens: config.deepseek.maxTokens
 		},
@@ -493,7 +552,7 @@ async function requestDeepSeek(config, userMessage) {
 		throw new Error('DEEPSEEK_INVALID_RESPONSE');
 	}
 
-	return reply.trim();
+	return sanitizeAssistantReply(reply);
 }
 
 function getSafeProviderErrorMessage(error) {
@@ -546,11 +605,21 @@ exports.main = async (event, context) => {
 	if (validation.error) {
 		return validation.error;
 	}
+	const relationshipStage = getRelationshipStage(event, validation.userMessage);
+	console.info('relationship_stage_resolved', {
+		relationshipStage
+	});
 
-	if (isOutOfPetScope(validation.userMessage)) {
+	const scopeCheck = getScopeCheck(validation.userMessage, relationshipStage);
+	console.info('scope_check_result', {
+		result: scopeCheck.outOfScope ? 'out_of_scope' : 'in_scope',
+		scope_reason: scopeCheck.reason
+	});
+
+	if (scopeCheck.outOfScope) {
 		return {
 			code: 0,
-			reply: buildOutOfScopeReply(),
+			reply: buildOutOfScopeReply(relationshipStage),
 			remaining: null,
 			outOfScope: true
 		};
@@ -562,7 +631,7 @@ exports.main = async (event, context) => {
 	}
 
 	try {
-		const reply = await requestDeepSeek(config, validation.userMessage);
+		const reply = await requestDeepSeek(config, validation.userMessage, relationshipStage);
 		return {
 			code: 0,
 			reply,

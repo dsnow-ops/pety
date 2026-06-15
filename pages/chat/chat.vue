@@ -450,10 +450,17 @@ export default {
       this.isTyping = true;
       this.scrollToBottom('typing');
 
+      const currentRelationshipStage = getPetRelationshipStage(this.activePet);
       const userMessage = this.buildUserMessage(userText, imageUrl);
 
       try {
-        const res = await uniCloud.callFunction({ name: 'api_deepseek', data: { userMessage } });
+        const res = await uniCloud.callFunction({
+          name: 'api_deepseek',
+          data: {
+            userMessage,
+            relationshipStage: currentRelationshipStage
+          }
+        });
         this.isTyping = false;
         if (res.result && res.result.code === 0) {
           const reply = res.result.outOfScope
