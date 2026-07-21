@@ -923,4 +923,131 @@ export default {
     opacity: 1;
   }
 }
+
+.chat-page {
+  --ui-bg-1: #F8F2E8;
+  --ui-bg-2: #EFE5D5;
+  --ui-bg-3: #E7EADF;
+  --ui-card: rgba(255, 252, 246, 0.66);
+  --ui-border: rgba(255, 255, 255, 0.58);
+  --ui-text: #2F2A24;
+  --ui-muted: rgba(47, 42, 36, 0.58);
+  --ui-accent: #6D5945;
+  background:
+    radial-gradient(circle at 18% 4%, rgba(232, 188, 128, 0.24) 0%, rgba(255, 255, 255, 0) 34%),
+    linear-gradient(145deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 52%, var(--ui-bg-3) 100%);
+  animation: chatFadeUp 480ms ease both;
+}
+
+.chat-page.theme-memorial {
+  --ui-bg-1: #F3F1ED;
+  --ui-bg-2: #E5E7EE;
+  --ui-bg-3: #DDD8E8;
+  --ui-card: rgba(255, 255, 255, 0.58);
+  --ui-border: rgba(255, 255, 255, 0.54);
+  --ui-text: #292B32;
+  --ui-muted: rgba(41, 43, 50, 0.56);
+  --ui-accent: #5F6478;
+}
+
+.chat-header {
+  background: rgba(255, 252, 246, 0.58);
+  border-bottom: 1rpx solid var(--ui-border);
+  box-shadow: 0 12rpx 34rpx rgba(72, 58, 43, 0.045);
+}
+
+.header-title,
+.prompt-title,
+.context-title {
+  color: var(--ui-text);
+}
+
+.header-subtitle,
+.prompt-safety {
+  color: var(--ui-muted);
+}
+
+.pet-mini,
+.message-right .avatar,
+.send-btn {
+  background: var(--ui-accent);
+}
+
+.prompt-pill,
+.prompt-panel,
+.context-card,
+.suggestion-item,
+.service-tab,
+.chat-input {
+  border-color: var(--ui-border);
+  background: var(--ui-card);
+  box-shadow: 0 14rpx 36rpx rgba(72, 58, 43, 0.05);
+}
+
+.prompt-panel,
+.context-card,
+.message-bubble,
+.suggestion-item,
+.chat-input {
+  border-radius: 28rpx;
+}
+
+.message-left .message-bubble {
+  background: rgba(255, 252, 246, 0.76);
+  border-color: var(--ui-border);
+}
+
+.message-right .message-bubble {
+  background: linear-gradient(145deg, var(--ui-accent), rgba(81, 67, 55, 0.92));
+}
+
+.service-strip,
+.input-bar {
+  background: rgba(248, 242, 232, 0.72);
+}
+
+.input-bar {
+  border-top: 1rpx solid var(--ui-border);
+}
+
+.round-tool,
+.collapse-btn,
+.context-badge {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.prompt-pill,
+.collapse-btn,
+.suggestion-item,
+.service-tab,
+.round-tool,
+.send-btn {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.prompt-pill-hover,
+.collapse-btn-hover,
+.suggestion-item-hover,
+.service-tab-hover,
+.tool-hover,
+.send-btn-hover {
+  transform: scale(0.985);
+  opacity: 0.84;
+}
+
+.send-btn-hover,
+.tool-hover {
+  transform: scale(0.94);
+}
+
+@keyframes chatFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>

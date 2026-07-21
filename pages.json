@@ -8,6 +8,13 @@
 			}
 		},
 		{
+			"path": "pages/avatar-generate/avatar-generate",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/home/home",
 			"style": {
 				"navigationBarTitleText": "首页",

@@ -106,6 +106,7 @@
           maxlength="500"
           :show-confirm-bar="false"
         ></textarea>
+        <text class="note-help">{{ noteHelpText }}</text>
       </view>
 
       <button class="save-btn" hover-class="save-btn-hover" @click="saveRecord">
@@ -201,6 +202,12 @@ export default {
     },
     recordTitle() {
       return this.selectedHasRecord ? this.recordCopy.recordPrimaryActionText : this.recordCopy.recordEmptyTitle;
+    },
+    noteHelpText() {
+      if (this.relationshipStage === 'deceased') {
+        return '这些文字会慢慢组成你们的故事，方便以后整理回忆、写信，或回看那些真实拥有过的陪伴。';
+      }
+      return '你写下的小事，归爪会认真记住。之后整理照护记录、准备问诊或回看变化时，这些文字都会成为重要线索。';
     },
     calendarDays() {
       const year = this.currentMonth.getFullYear();
@@ -624,7 +631,8 @@ export default {
 }
 
 .event-chip {
-  padding: 15rpx 20rpx;
+  padding: 13rpx 18rpx;
+  font-size: 22rpx;
 }
 
 .note-input {
@@ -640,6 +648,14 @@ export default {
   line-height: 1.55;
 }
 
+.note-help {
+  display: block;
+  margin-top: 14rpx;
+  color: var(--ui-muted, #8F877A);
+  font-size: 21rpx;
+  line-height: 1.55;
+}
+
 .save-btn {
   margin-top: 28rpx;
   width: 100%;
@@ -650,5 +666,119 @@ export default {
   font-size: 29rpx;
   font-weight: 600;
   line-height: 88rpx;
+}
+
+.calendar-page {
+  --ui-bg-1: #F8F2E8;
+  --ui-bg-2: #EFE5D5;
+  --ui-bg-3: #E7EADF;
+  --ui-card: rgba(255, 252, 246, 0.66);
+  --ui-border: rgba(255, 255, 255, 0.58);
+  --ui-text: #2F2A24;
+  --ui-muted: rgba(47, 42, 36, 0.58);
+  --ui-accent: #6D5945;
+  background:
+    radial-gradient(circle at 16% 8%, rgba(232, 188, 128, 0.24) 0%, rgba(255, 255, 255, 0) 34%),
+    linear-gradient(145deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 52%, var(--ui-bg-3) 100%);
+  animation: calendarFadeUp 520ms ease both;
+}
+
+.calendar-page.theme-memorial {
+  --ui-bg-1: #F3F1ED;
+  --ui-bg-2: #E5E7EE;
+  --ui-bg-3: #DDD8E8;
+  --ui-card: rgba(255, 255, 255, 0.58);
+  --ui-border: rgba(255, 255, 255, 0.54);
+  --ui-text: #292B32;
+  --ui-muted: rgba(41, 43, 50, 0.56);
+  --ui-accent: #5F6478;
+}
+
+.icon-button,
+.pet-strip,
+.empty-panel,
+.month-card,
+.record-card,
+.note-input {
+  border-color: var(--ui-border);
+  background: var(--ui-card);
+  box-shadow: 0 16rpx 42rpx rgba(72, 58, 43, 0.055);
+}
+
+.pet-strip,
+.empty-panel,
+.month-card,
+.record-card {
+  border-radius: 30rpx;
+}
+
+.title-kicker,
+.record-kicker,
+.field-title {
+  color: var(--ui-accent);
+}
+
+.pet-desc,
+.empty-desc,
+.legend-text {
+  color: var(--ui-muted);
+}
+
+.month-arrow,
+.mood-chip,
+.event-chip,
+.record-state {
+  background: rgba(255, 255, 255, 0.42);
+  border-color: var(--ui-border);
+}
+
+.date-number {
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.date-cell-active .date-number,
+.mood-chip-active,
+.event-chip-active,
+.save-btn {
+  background: var(--ui-accent);
+  border-color: transparent;
+}
+
+.icon-button,
+.month-arrow,
+.date-cell,
+.mood-chip,
+.event-chip,
+.save-btn {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.icon-button-hover,
+.month-arrow-hover {
+  transform: scale(0.94);
+  opacity: 0.82;
+}
+
+.save-btn-hover {
+  transform: scale(0.98);
+  opacity: 0.88;
+}
+
+.date-cell:active,
+.mood-chip:active,
+.event-chip:active {
+  transform: scale(0.985);
+  opacity: 0.88;
+}
+
+@keyframes calendarFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

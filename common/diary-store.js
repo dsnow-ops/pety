@@ -15,6 +15,17 @@ const MOOD_COLORS = {
 };
 
 const EVENT_LABELS = {
+  food: '饮食',
+  water: '饮水',
+  spirit: '精神',
+  stool: '便便',
+  weight: '体重',
+  sleep: '睡眠',
+  exercise: '外出 / 运动',
+  clean: '洗澡 / 清洁',
+  preventive: '疫苗 / 驱虫',
+  abnormal: '异常情况',
+  memo: '小事 / 备忘',
   appetite_good: '食欲正常',
   appetite_low: '食欲下降',
   water_more: '饮水增多',

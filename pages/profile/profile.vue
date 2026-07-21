@@ -50,7 +50,7 @@
         <view class="account-copy">
           <text class="account-title">{{ authStatusText }}</text>
           <text class="account-desc">{{ accountDesc }}</text>
-          <text class="account-plan">Plan: {{ remotePlanText }}</text>
+          <text class="account-plan">{{ remotePlanText }}</text>
         </view>
         <view class="account-actions">
           <button class="account-action" hover-class="account-action-hover" @click="handleAccountAction">
@@ -207,7 +207,8 @@ export default {
       return '登录后可验证云端账号，本地数据仍保存在当前设备';
     },
     remotePlanText() {
-      return `${this.userProfile.plan || 'free'} · ${this.userProfile.status || 'inactive'}`;
+      if (!this.userProfile.loggedIn) return '当前为本地体验';
+      return this.isPlusUser ? '已开启更完整的陪伴空间' : '登录后可开启云端备份';
     },
     accountActionText() {
       if (this.authLoading) return '刷新中';
@@ -796,5 +797,117 @@ export default {
   color: #6F665B;
   font-size: 24rpx;
   line-height: 1.55;
+}
+
+.profile-page {
+  --ui-bg-1: #F8F2E8;
+  --ui-bg-2: #EEE3D3;
+  --ui-bg-3: #E8EBDD;
+  --ui-card: rgba(255, 252, 246, 0.66);
+  --ui-border: rgba(255, 255, 255, 0.58);
+  --ui-text: #2F2A24;
+  --ui-muted: rgba(47, 42, 36, 0.58);
+  --ui-accent: #6D5945;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(232, 188, 128, 0.25) 0%, rgba(255, 255, 255, 0) 34%),
+    linear-gradient(145deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 54%, var(--ui-bg-3) 100%);
+}
+
+.profile-scroll {
+  animation: profileFadeUp 520ms ease both;
+}
+
+.profile-hero {
+  margin: 0 24rpx;
+  padding: 86rpx 28rpx 56rpx;
+  border-radius: 0 0 42rpx 42rpx;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.54), rgba(255, 249, 239, 0.36));
+  border: 1rpx solid var(--ui-border);
+  box-shadow: 0 24rpx 66rpx rgba(72, 58, 43, 0.08);
+}
+
+.hero-kicker,
+.section-meta,
+.account-plan,
+.about-kicker {
+  color: var(--ui-accent);
+}
+
+.active-desc,
+.account-desc,
+.menu-desc,
+.about-desc,
+.pet-chip-status {
+  color: var(--ui-muted);
+}
+
+.stats-board,
+.account-panel,
+.menu-section,
+.about-panel,
+.pet-chip,
+.section-action {
+  border-radius: 28rpx;
+  border: 1rpx solid var(--ui-border);
+  background: var(--ui-card);
+  box-shadow: 0 16rpx 42rpx rgba(72, 58, 43, 0.06);
+}
+
+.menu-item {
+  border-bottom-color: rgba(255, 255, 255, 0.42);
+}
+
+.menu-icon,
+.section-action,
+.account-action-light {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.icon-button,
+.account-action,
+.section-action,
+.pet-chip,
+.menu-item,
+.stat-item {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.icon-button-hover {
+  transform: scale(0.94);
+  opacity: 0.82;
+}
+
+.account-action-hover,
+.section-action-hover,
+.stat-item-hover,
+.menu-item-hover {
+  transform: scale(0.985);
+  opacity: 0.86;
+}
+
+.account-action {
+  background: var(--ui-accent);
+  box-shadow: 0 14rpx 34rpx rgba(109, 89, 69, 0.18);
+}
+
+.account-action.account-action-light {
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--ui-accent);
+}
+
+.pet-chip-active {
+  background: var(--ui-accent);
+  border-color: transparent;
+}
+
+@keyframes profileFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

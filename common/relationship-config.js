@@ -10,7 +10,7 @@ const RELATIONSHIP_CONFIG = {
     homeTitle: name => `${name} 今天也在这里`,
     homeSubtitle: name => `把 ${name} 的日常、档案和照护线索慢慢收好。`,
     primaryActionText: '记录今天',
-    secondaryActionText: '和它聊聊',
+    secondaryActionText: 'AI 问诊',
     avatarActionText: '查看数字形象',
     avatarEmptyText: '可以先保留真实照片，之后再生成它的数字形象。',
     isPrimaryStage: true,
@@ -32,12 +32,18 @@ const RELATIONSHIP_CONFIG = {
     recordEmptyText: '可以记录饮食、精神、体重、疫苗、驱虫或一次小小的陪伴',
     recordTypeLabel: '记录类型',
     recordTypes: [
-      { key: 'daily', label: '日常' },
-      { key: 'health', label: '健康' },
+      { key: 'food', label: '饮食' },
+      { key: 'water', label: '饮水' },
+      { key: 'spirit', label: '精神' },
+      { key: 'stool', label: '便便' },
       { key: 'weight', label: '体重' },
-      { key: 'vaccine', label: '疫苗' },
-      { key: 'deworm', label: '驱虫' },
-      { key: 'abnormal', label: '异常观察' }
+      { key: 'sleep', label: '睡眠' },
+      { key: 'exercise', label: '外出 / 运动' },
+      { key: 'clean', label: '洗澡 / 清洁' },
+      { key: 'preventive', label: '疫苗 / 驱虫' },
+      { key: 'medicine', label: '用药' },
+      { key: 'abnormal', label: '异常情况' },
+      { key: 'memo', label: '小事 / 备忘' }
     ],
     chatPageTitle: '陪伴中的照护',
     chatPageSubtitle: '一起记录、理解和照顾它今天的状态',
@@ -83,7 +89,7 @@ const RELATIONSHIP_CONFIG = {
       archiveButtonText: '查看档案',
       quickActions: [
         { key: 'journal', icon: 'compose', title: '记录今天', desc: '今日片段' },
-        { key: 'chat', icon: 'chatbubble', title: '和它聊聊', desc: '温柔咨询' },
+        { key: 'chat', icon: 'chatbubble', title: 'AI 问诊', desc: '整理症状和问题' },
         { key: 'archive', icon: 'folder-add', title: '档案', desc: '身体与习惯' },
         { key: 'care', icon: 'home', title: '就医', desc: '医院与急诊' }
       ],

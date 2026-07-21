@@ -1,6 +1,7 @@
 import { getPetRelationshipStage, normalizeRelationshipStage } from './relationship-config.js';
 
 const PLACEHOLDER_IMAGE = '/static/pet.png';
+const MOCK_GENERATED_AVATAR = '/static/pet.png';
 
 const AVATAR_SOURCES = ['original', 'generated', 'placeholder'];
 const AVATAR_STATUSES = ['none', 'pending', 'ready', 'failed'];
@@ -78,7 +79,7 @@ export function createAvatarJob(pet = {}, options = {}) {
     createdAt: now,
     result: {
       jobId,
-      generatedAvatarUrl: getAvatarDisplayImage(pet),
+      generatedAvatarUrl: MOCK_GENERATED_AVATAR,
       avatarSource: 'generated',
       avatarStatus: 'ready',
       avatarStyle: style,
@@ -97,7 +98,7 @@ export function getAvatarJobStatus(jobId) {
     progress: 100,
     result: {
       jobId,
-      generatedAvatarUrl: PLACEHOLDER_IMAGE,
+      generatedAvatarUrl: MOCK_GENERATED_AVATAR,
       avatarSource: 'generated',
       avatarStatus: 'ready',
       avatarStyle: getDefaultAvatarStyle('current'),
@@ -108,7 +109,7 @@ export function getAvatarJobStatus(jobId) {
 
 export function saveGeneratedAvatar(pet = {}, result = {}) {
   const stage = getPetRelationshipStage(pet);
-  const generatedAvatarUrl = result.generatedAvatarUrl || result.avatarUrl || getAvatarDisplayImage(pet);
+  const generatedAvatarUrl = result.generatedAvatarUrl || result.avatarUrl || MOCK_GENERATED_AVATAR;
 
   return {
     generatedAvatarUrl,

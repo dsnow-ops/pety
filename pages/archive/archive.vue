@@ -652,4 +652,114 @@ export default {
   font-weight: 600;
   line-height: 92rpx;
 }
+
+.archive-page {
+  --ui-bg-1: #F8F2E8;
+  --ui-bg-2: #EFE5D5;
+  --ui-bg-3: #E7EADF;
+  --ui-card: rgba(255, 252, 246, 0.66);
+  --ui-border: rgba(255, 255, 255, 0.58);
+  --ui-text: #2F2A24;
+  --ui-muted: rgba(47, 42, 36, 0.58);
+  --ui-accent: #6D5945;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(232, 188, 128, 0.24) 0%, rgba(255, 255, 255, 0) 34%),
+    linear-gradient(145deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 54%, var(--ui-bg-3) 100%);
+}
+
+.archive-page.theme-memorial {
+  --ui-bg-1: #F3F1ED;
+  --ui-bg-2: #E5E7EE;
+  --ui-bg-3: #DDD8E8;
+  --ui-card: rgba(255, 255, 255, 0.58);
+  --ui-border: rgba(255, 255, 255, 0.54);
+  --ui-text: #292B32;
+  --ui-muted: rgba(41, 43, 50, 0.56);
+  --ui-accent: #5F6478;
+}
+
+.archive-scroll {
+  animation: archiveFadeUp 520ms ease both;
+}
+
+.icon-button,
+.pet-card,
+.empty-panel,
+.section-card,
+.choice-chip,
+.field-input,
+.picker-field,
+.field-textarea {
+  border-color: var(--ui-border);
+  background: var(--ui-card);
+  box-shadow: 0 16rpx 42rpx rgba(72, 58, 43, 0.055);
+}
+
+.pet-card,
+.empty-panel,
+.section-card {
+  border-radius: 30rpx;
+}
+
+.title-kicker,
+.field-label,
+.stage-pill,
+.avatar-state-pill {
+  color: var(--ui-accent);
+}
+
+.pet-desc,
+.empty-desc,
+.stage-desc,
+.avatar-style-text,
+.memorial-mode-desc {
+  color: var(--ui-muted);
+}
+
+.stage-pill,
+.avatar-state-pill,
+.mode-toggle-btn,
+.choice-chip,
+.field-input,
+.picker-field,
+.field-textarea {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.choice-chip-active,
+.save-btn {
+  background: var(--ui-accent);
+  border-color: transparent;
+}
+
+.icon-button,
+.avatar-regenerate-btn,
+.mode-toggle-btn,
+.choice-chip,
+.save-btn {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.icon-button-hover {
+  transform: scale(0.94);
+  opacity: 0.82;
+}
+
+.avatar-regenerate-btn-hover,
+.mode-toggle-btn-hover,
+.save-btn-hover {
+  transform: scale(0.98);
+  opacity: 0.86;
+}
+
+@keyframes archiveFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>

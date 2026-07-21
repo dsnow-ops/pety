@@ -10,22 +10,6 @@
     </view>
 
     <view class="setup-section" v-if="!isAwakening">
-      <view class="relationship-section">
-        <text class="section-label">现在你们处在哪个阶段</text>
-        <view class="relationship-grid">
-          <view
-            v-for="option in relationshipOptions"
-            :key="option.status"
-            :class="['relationship-card', petStatus === option.status ? 'relationship-card-active' : '']"
-            hover-class="relationship-card-hover"
-            @click="petStatus = option.status"
-          >
-            <text class="relationship-title">{{ option.label }}</text>
-            <text class="relationship-desc">{{ option.welcome.desc }}</text>
-          </view>
-        </view>
-      </view>
-
       <view class="field-block">
         <text class="field-label">{{ currentConfig.welcome.nameLabel }}</text>
         <input
@@ -52,25 +36,8 @@
           <uni-icons type="image" size="24" color="#8C7557"></uni-icons>
         </view>
         <view class="avatar-mock-copy">
-          <text class="avatar-mock-title">上传照片，生成归爪电子形象（mock）</text>
-          <text class="avatar-mock-desc">可跳过。将默认使用{{ defaultAvatarStyleText }}，本轮只保存在本地，不上传云端。</text>
-        </view>
-      </view>
-
-      <view class="mode-selector">
-        <view
-          :class="['mode-option', petMode === 'simple' ? 'mode-option-active' : '']"
-          @click="petMode = 'simple'"
-        >
-          <text class="mode-title">照片</text>
-          <text class="mode-desc">安静陈列</text>
-        </view>
-        <view
-          :class="['mode-option', petMode === '2.5d' ? 'mode-option-active' : '']"
-          @click="petMode = '2.5d'"
-        >
-          <text class="mode-title">2.5D</text>
-          <text class="mode-desc">轻微呼吸</text>
+          <text class="avatar-mock-title">先上传一张照片就够了</text>
+          <text class="avatar-mock-desc">之后可以重新生成。将默认使用{{ defaultAvatarStyleText }}，本轮只保存在本地，不上传云端。</text>
         </view>
       </view>
 
@@ -91,7 +58,7 @@
 
 <script>
 import { addPet, canCreatePet, getActivePet, updateActivePet } from '../../common/pet-store.js';
-import { getPetRelationshipStage, getPrimaryRelationshipStages, getRelationshipConfig, normalizeRelationshipStage, withRelationshipStage } from '../../common/relationship-config.js';
+import { getPetRelationshipStage, getRelationshipConfig, normalizeRelationshipStage, withRelationshipStage } from '../../common/relationship-config.js';
 import { getAvatarStyleText, getDefaultAvatarStyle } from '../../common/pet-avatar-generator.js';
 
 const ONBOARDING_PENDING_KEY = 'guizhua_onboarding_pending';
@@ -110,9 +77,6 @@ export default {
     }
   },
   computed: {
-    relationshipOptions() {
-      return getPrimaryRelationshipStages();
-    },
     currentConfig() {
       return getRelationshipConfig(this.petStatus);
     },
@@ -152,21 +116,29 @@ export default {
   },
   methods: {
     uploadPhoto() {
+      uni.showActionSheet({
+        itemList: ['拍照', '从相册选择'],
+        success: (res) => {
+          this.choosePetPhoto(res.tapIndex === 0 ? 'camera' : 'album');
+        }
+      });
+    },
+    choosePetPhoto(sourceType) {
       uni.chooseImage({
         count: 1,
         sizeType: ['compressed'],
-        sourceType: ['album', 'camera'],
-        success: (res) => {
-          const tempPath = res.tempFilePaths[0];
-          uni.saveFile({
-            tempFilePath: tempPath,
-            success: (saveRes) => {
-              this.tempPhoto = saveRes.savedFilePath;
-            },
-            fail: () => {
-              this.tempPhoto = tempPath;
-            }
-          });
+        sourceType: [sourceType],
+        success: (res) => this.saveTempPhoto(res.tempFilePaths[0])
+      });
+    },
+    saveTempPhoto(tempPath) {
+      uni.saveFile({
+        tempFilePath: tempPath,
+        success: (saveRes) => {
+          this.tempPhoto = saveRes.savedFilePath;
+        },
+        fail: () => {
+          this.tempPhoto = tempPath;
         }
       });
     },
@@ -205,7 +177,9 @@ export default {
 
       this.isAwakening = true;
       const photo = this.tempPhoto || '/static/pet.png';
-      const relationshipStage = normalizeRelationshipStage(this.petStatus);
+      const relationshipStage = this.activePetId
+        ? normalizeRelationshipStage(this.petStatus)
+        : 'current';
       const petPatch = withRelationshipStage({
         name: petName,
         photo,
@@ -223,9 +197,14 @@ export default {
         uni.setStorageSync(ONBOARDING_PENDING_KEY, true);
       }
 
+      const avatarReady = pet.avatarStatus === 'ready' && pet.generatedAvatarUrl;
       setTimeout(() => {
-        uni.switchTab({ url: '/pages/home/home' });
-      }, 1200);
+        if (avatarReady) {
+          uni.switchTab({ url: '/pages/home/home' });
+          return;
+        }
+        uni.redirectTo({ url: `/pages/avatar-generate/avatar-generate?petId=${pet.id}` });
+      }, 900);
     }
   }
 }
@@ -590,6 +569,98 @@ export default {
   50% {
     transform: scale(0.92);
     opacity: 0.72;
+  }
+}
+
+.welcome-page {
+  --ui-bg-1: #F8F2E8;
+  --ui-bg-2: #EFE5D5;
+  --ui-bg-3: #E7EADF;
+  --ui-card: rgba(255, 252, 246, 0.66);
+  --ui-border: rgba(255, 255, 255, 0.58);
+  --ui-text: #2F2A24;
+  --ui-muted: rgba(47, 42, 36, 0.58);
+  --ui-accent: #6D5945;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(232, 188, 128, 0.24) 0%, rgba(255, 255, 255, 0) 34%),
+    linear-gradient(145deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 52%, var(--ui-bg-3) 100%);
+  animation: welcomeFadeUp 520ms ease both;
+}
+
+.brand-mark {
+  background: var(--ui-accent);
+  box-shadow: 0 24rpx 52rpx rgba(109, 89, 69, 0.2);
+}
+
+.brand-subtitle,
+.section-label,
+.field-label {
+  color: var(--ui-accent);
+}
+
+.brand-line,
+.relationship-desc,
+.upload-subtitle,
+.avatar-mock-desc,
+.mode-desc {
+  color: var(--ui-muted);
+}
+
+.relationship-card,
+.field-block,
+.photo-panel,
+.avatar-mock-panel,
+.mode-option {
+  border-radius: 30rpx;
+  border: 1rpx solid var(--ui-border);
+  background: var(--ui-card);
+  box-shadow: 0 16rpx 42rpx rgba(72, 58, 43, 0.055);
+}
+
+.avatar-mock-panel {
+  border-style: solid;
+}
+
+.relationship-card-active,
+.mode-option-active,
+.start-btn {
+  background: var(--ui-accent);
+  border-color: transparent;
+}
+
+.upload-icon,
+.avatar-mock-icon {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.relationship-card,
+.photo-panel,
+.avatar-mock-panel,
+.mode-option,
+.start-btn {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.relationship-card-hover,
+.photo-panel-hover,
+.avatar-mock-panel-hover,
+.start-btn-hover {
+  transform: scale(0.985);
+  opacity: 0.86;
+}
+
+.start-btn-hover {
+  transform: scale(0.98);
+}
+
+@keyframes welcomeFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>
