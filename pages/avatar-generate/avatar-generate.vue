@@ -209,7 +209,10 @@ export default {
 
 .star-field {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   pointer-events: none;
 }
 
@@ -410,9 +413,13 @@ export default {
 
 .source-row {
   margin-top: 26rpx;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 16rpx;
+}
+
+.source-row .source-btn {
+  flex: 1;
+  min-width: 0;
 }
 
 .source-btn,

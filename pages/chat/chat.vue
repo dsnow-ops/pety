@@ -115,8 +115,14 @@
         :show-confirm-bar="false"
         cursor-spacing="20"
       ></textarea>
-      <button class="send-btn" hover-class="send-btn-hover" @click="sendMessage(null)">
-        <uni-icons type="paperplane-filled" size="20" color="#FBFAF6"></uni-icons>
+      <button
+        :class="['send-btn', isTyping ? 'send-btn-disabled' : '']"
+        hover-class="send-btn-hover"
+        :disabled="isTyping"
+        @click="sendMessage(null)"
+      >
+        <text v-if="isTyping" class="send-loading-text">整理中</text>
+        <uni-icons v-else type="paperplane-filled" size="20" color="#FBFAF6"></uni-icons>
       </button>
     </view>
   </view>
@@ -189,7 +195,7 @@ export default {
       if (!this.activePetId || !this.activePet) return badges;
 
       const profileContext = buildProfileContext(this.activePet, getPetProfile(this.activePetId), { maxChars: 240 });
-      const diaryContext = buildDiaryContext(this.activePetId, { maxDays: 14, maxChars: 220 });
+      const diaryContext = buildDiaryContext(this.activePetId, { maxDays: 3, maxChars: 220 });
 
       if (profileContext) badges.push('基础档案');
       if (diaryContext) badges.push('最近日历');
@@ -339,7 +345,7 @@ export default {
       });
       const diaryBudget = Math.max(MAX_CLOUD_MESSAGE_CHARS - fixedContent.length - stageInstruction.length - profileContext.length - 32, 0);
       const diaryContext = buildDiaryContext(this.activePetId, {
-        maxDays: 14,
+        maxDays: 3,
         maxChars: Math.min(diaryBudget, 260)
       });
       const message = [stageInstruction, profileContext, diaryContext, fixedContent].filter(Boolean).join('\n\n');
@@ -876,6 +882,17 @@ export default {
 .send-btn {
   background: #302A23;
   box-shadow: 0 12rpx 28rpx rgba(48, 42, 35, 0.16);
+}
+
+.send-btn-disabled {
+  opacity: 0.58;
+  box-shadow: none;
+}
+
+.send-loading-text {
+  color: #FBFAF6;
+  font-size: 19rpx;
+  line-height: 1;
 }
 
 .round-tool::after,

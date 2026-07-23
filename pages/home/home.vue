@@ -485,7 +485,10 @@ export default {
 
 .gradient-background {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   pointer-events: none;
   background:
     radial-gradient(circle at 18% 12%, var(--home-glow-1) 0%, rgba(255, 255, 255, 0) 38%),
@@ -761,12 +764,12 @@ export default {
 
 .today-quick-row {
   margin-top: 18rpx;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
   gap: 10rpx;
 }
 
 .today-quick-chip {
+  flex: 1;
   min-width: 0;
   padding: 13rpx 8rpx;
   border-radius: 999rpx;
@@ -783,14 +786,14 @@ export default {
   margin-top: 20rpx;
   padding: 14rpx 12rpx;
   border-radius: 24rpx;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  display: flex;
   gap: 8rpx;
   background: rgba(255, 255, 255, 0.25);
   border: 1rpx solid rgba(255, 255, 255, 0.34);
 }
 
 .week-item {
+  flex: 1;
   min-width: 0;
   height: 58rpx;
   border-radius: 20rpx;
@@ -828,12 +831,12 @@ export default {
 
 .action-row {
   margin-top: 18rpx;
-  display: grid;
-  grid-template-columns: 1.15fr 1fr 1fr;
+  display: flex;
   gap: 14rpx;
 }
 
 .action-card {
+  flex: 1;
   min-width: 0;
   min-height: 108rpx;
   margin: 0;
