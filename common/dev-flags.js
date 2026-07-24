@@ -1,67 +1,35 @@
-const FLAG_SOURCE = 'VITE_ALLOW_MULTI_PET_TESTING';
+const isDevelopment = PETY_IS_DEVELOPMENT === true;
+const allowMultiPetTesting =
+  isDevelopment &&
+  PETY_ALLOW_MULTI_PET_TESTING === true;
 
-function readViteEnvironment() {
-  try {
-    return import.meta && import.meta.env ? import.meta.env : {};
-  } catch (error) {
-    return {};
-  }
-}
-
-function readProcessEnvironment() {
-  try {
-    return typeof process !== 'undefined' && process.env ? process.env : {};
-  } catch (error) {
-    return {};
-  }
-}
-
-function resolveEnvironment() {
-  const viteEnvironment = readViteEnvironment();
-  const processEnvironment = readProcessEnvironment();
-  const mode = String(
-    viteEnvironment.MODE ||
-    processEnvironment.NODE_ENV ||
-    'unknown'
-  ).toLowerCase();
-  const isDevelopment = viteEnvironment.DEV === true || mode === 'development';
-  const rawFlag = viteEnvironment[FLAG_SOURCE] !== undefined
-    ? viteEnvironment[FLAG_SOURCE]
-    : processEnvironment[FLAG_SOURCE];
-  const explicitlyEnabled = String(rawFlag || '').toLowerCase() === 'true';
-
-  return Object.freeze({
-    mode,
-    isDevelopment,
-    source: FLAG_SOURCE,
-    allowMultiPetTesting: isDevelopment && explicitlyEnabled
-  });
-}
-
-export const DEV_ENVIRONMENT = resolveEnvironment();
+export const DEV_ENVIRONMENT = Object.freeze({
+  mode: isDevelopment ? 'development' : 'production',
+  isDevelopment,
+  source: 'vite.define',
+  allowMultiPetTesting
+});
 
 export const DEV_MULTI_PET_LIMIT = 3;
 
 export const DEV_FLAGS = Object.freeze({
-  allowMultiPetTesting: DEV_ENVIRONMENT.allowMultiPetTesting
+  allowMultiPetTesting
 });
 
 let hasLoggedDiagnostics = false;
 
 export function isDevelopmentEnvironment() {
-  return DEV_ENVIRONMENT.isDevelopment;
+  return isDevelopment;
 }
 
 export function logDevFlagDiagnosticsOnce() {
-  if (!DEV_ENVIRONMENT.isDevelopment || hasLoggedDiagnostics) return;
+  if (!isDevelopment || hasLoggedDiagnostics) return;
 
-  console.info(`[DEV FLAGS] mode=${DEV_ENVIRONMENT.mode}`);
-  console.info(`[DEV FLAGS] allowMultiPetTesting=${DEV_FLAGS.allowMultiPetTesting}`);
-  console.info(`[DEV FLAGS] source=${DEV_ENVIRONMENT.source}`);
+  console.info(`[DEV FLAGS] allowMultiPetTesting=${allowMultiPetTesting}`);
   hasLoggedDiagnostics = true;
 }
 
 export function isMultiPetTestingEnabled() {
   logDevFlagDiagnosticsOnce();
-  return DEV_FLAGS.allowMultiPetTesting;
+  return allowMultiPetTesting;
 }
