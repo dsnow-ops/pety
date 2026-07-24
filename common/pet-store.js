@@ -1,4 +1,4 @@
-import { getPetRelationshipStage } from './relationship-config.js';
+import { getOwnerRelationLabel, getPetRelationshipStage, normalizeOwnerRelation } from './relationship-config.js';
 import { getDefaultAvatarStyle, normalizeAvatarSource, normalizeAvatarStatus, normalizeAvatarStyle } from './pet-avatar-generator.js';
 
 const PET_LIST_KEY = 'my_pets_list';
@@ -18,18 +18,8 @@ function normalizeStatus(status) {
   return ['current', 'deceased', 'future'].includes(status) ? status : 'current';
 }
 
-function normalizeOwnerCallType(type, preferredCall) {
-  const allowedTypes = ['mother', 'father', 'sister', 'brother', 'owner', 'name', 'custom'];
-  if (allowedTypes.includes(type)) return type;
-  return preferredCall ? 'custom' : '';
-}
-
 function normalizeOwnerGender(gender) {
   return ['female', 'male', 'unspecified'].includes(gender) ? gender : 'unspecified';
-}
-
-function normalizeOwnerPreferredCall(value) {
-  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 20);
 }
 
 function resolveAvatarSource(rawPet, originalPhotoUrl, generatedAvatarUrl) {
@@ -60,7 +50,19 @@ function normalizePet(rawPet = {}) {
   const photo = legacyPhoto || DEFAULT_PET_PHOTO;
   const createdAt = rawPet.createdAt || now;
   const relationshipStage = getPetRelationshipStage(rawPet);
-  const ownerPreferredCall = normalizeOwnerPreferredCall(rawPet.ownerPreferredCall);
+  const ownerRelation = normalizeOwnerRelation(rawPet);
+  const ownerRelationLabel = getOwnerRelationLabel({
+    ...rawPet,
+    ...ownerRelation
+  });
+  const legacyOwnerPreferredCall = String(rawPet.ownerPreferredCall || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 20);
+  const hasCanonicalOwnerRelation = Boolean(rawPet.ownerRelationKey);
+  const ownerPreferredCall = hasCanonicalOwnerRelation
+    ? ownerRelationLabel
+    : (legacyOwnerPreferredCall || ownerRelationLabel);
   const originalPhotoUrl = rawPet.originalPhotoUrl ||
     (legacyPhoto && legacyPhoto !== DEFAULT_PET_PHOTO ? legacyPhoto : '');
   const generatedAvatarUrl = rawPet.generatedAvatarUrl || '';
@@ -81,8 +83,12 @@ function normalizePet(rawPet = {}) {
     avatarStyle: normalizeAvatarStyle(rawPet.avatarStyle || getDefaultAvatarStyle(relationshipStage), relationshipStage),
     avatarStatus: normalizeAvatarStatus(rawPet.avatarStatus || (generatedAvatarUrl ? 'ready' : 'none')),
     avatarUpdatedAt: rawPet.avatarUpdatedAt || (generatedAvatarUrl ? (rawPet.updatedAt || createdAt) : 0),
+    ownerRelationKey: ownerRelation.ownerRelationKey,
+    ownerRelationCustom: ownerRelation.ownerRelationCustom,
     ownerPreferredCall,
-    ownerCallType: normalizeOwnerCallType(rawPet.ownerCallType, ownerPreferredCall),
+    ownerCallType: hasCanonicalOwnerRelation
+      ? ownerRelation.ownerRelationKey
+      : (rawPet.ownerCallType || ownerRelation.ownerRelationKey),
     ownerGender: normalizeOwnerGender(rawPet.ownerGender),
     mode: normalizeMode(rawPet.mode || rawPet.petMode),
     relationshipStage,

@@ -28,27 +28,28 @@
 
     <view v-if="activePet" class="month-card">
       <view class="month-head">
-        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeMonth(-1)">
+        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeWeek(-1)">
           <uni-icons type="left" size="18" color="#6B5D4D"></uni-icons>
         </button>
         <text class="month-title">{{ monthTitle }}</text>
-        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeMonth(1)">
+        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeWeek(1)">
           <uni-icons type="right" size="18" color="#6B5D4D"></uni-icons>
         </button>
       </view>
 
       <view class="week-row">
-        <text v-for="day in weekDays" :key="day" class="week-label">{{ day }}</text>
+        <text v-for="weekday in weekDays" :key="weekday" class="week-label">{{ weekday }}</text>
       </view>
 
       <view class="date-grid">
         <view
           v-for="item in calendarDays"
           :key="item.key"
-          :class="['date-cell', item.inMonth ? '' : 'date-cell-muted', item.dateKey === selectedDateKey ? 'date-cell-active' : '']"
+          :class="['date-cell', item.isToday ? 'date-cell-today' : '', item.dateKey === selectedDateKey ? 'date-cell-active' : '']"
           @click="selectDate(item)"
         >
-          <text class="date-number">{{ item.day }}</text>
+          <text class="date-number">{{ item.monthDayLabel }}</text>
+          <text class="date-lunar">{{ item.lunarShortLabel }}</text>
           <view v-if="item.hasRecord" class="record-dot" :style="{ background: item.moodColor }"></view>
         </view>
       </view>
@@ -127,6 +128,7 @@ import {
   hasDiaryRecord,
   saveDiaryRecord
 } from '../../common/diary-store.js';
+import { formatLocalCalendarSummary, getLocalCalendarDate } from '../../common/lunar-calendar.js';
 import {
   getPetRelationshipStage,
   getRelationshipConfig,
@@ -136,15 +138,29 @@ import {
   getRelationshipThemeClass
 } from '../../common/relationship-config.js';
 
+function parseLocalDateKey(dateKey) {
+  const parts = String(dateKey || '').split('-').map(Number);
+  if (parts.length !== 3 || parts.some(part => !Number.isFinite(part))) return new Date();
+  return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+}
+
+function getLocalWeekStart(dateValue) {
+  const date = new Date(dateValue);
+  date.setHours(12, 0, 0, 0);
+  const mondayOffset = (date.getDay() + 6) % 7;
+  date.setDate(date.getDate() - mondayOffset);
+  return date;
+}
+
 export default {
   data() {
     return {
       activePet: null,
       activePetId: null,
-      currentMonth: new Date(),
+      currentWeekDate: new Date(),
       selectedDateKey: formatDateKey(),
       diaryMap: {},
-      weekDays: ['一', '二', '三', '四', '五', '六', '日'],
+      weekDays: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
       moodOptions: [
         { key: 'good', label: '轻松' },
         { key: 'calm', label: '平稳' },
@@ -187,12 +203,22 @@ export default {
       return options.concat(legacyOptions);
     },
     monthTitle() {
-      return `${this.currentMonth.getFullYear()} 年 ${this.currentMonth.getMonth() + 1} 月`;
+      const days = this.calendarDays;
+      if (!days.length) return '';
+      const first = days[0];
+      const last = days[days.length - 1];
+      if (first.year === last.year && first.month === last.month) {
+        return `${first.year} 年 ${first.month} 月`;
+      }
+      if (first.year === last.year) {
+        return `${first.year} 年 ${first.month} 月 - ${last.month} 月`;
+      }
+      return `${first.year} 年 ${first.month} 月 - ${last.year} 年 ${last.month} 月`;
     },
     selectedDateLabel() {
-      const parts = this.selectedDateKey.split('-');
+      const parts = this.selectedDateKey.split('-').map(Number);
       if (parts.length !== 3) return this.selectedDateKey;
-      return `${parts[1]}月${parts[2]}日`;
+      return formatLocalCalendarSummary(parts[0], parts[1], parts[2]) || this.selectedDateKey;
     },
     currentMoodLabel() {
       return getMoodLabel(this.form.mood);
@@ -210,23 +236,26 @@ export default {
       return '你写下的小事，归爪会认真记住。之后整理照护记录、准备问诊或回看变化时，这些文字都会成为重要线索。';
     },
     calendarDays() {
-      const year = this.currentMonth.getFullYear();
-      const month = this.currentMonth.getMonth();
-      const firstDate = new Date(year, month, 1);
-      const startOffset = (firstDate.getDay() + 6) % 7;
-      const startDate = new Date(year, month, 1 - startOffset);
+      const startDate = getLocalWeekStart(this.currentWeekDate);
+      const todayKey = formatDateKey();
       const days = [];
 
-      for (let index = 0; index < 42; index += 1) {
+      for (let index = 0; index < 7; index += 1) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + index);
         const dateKey = formatDateKey(date);
+        const calendarDate = getLocalCalendarDate(date);
 
         days.push({
           key: `${dateKey}_${index}`,
           dateKey,
           day: date.getDate(),
-          inMonth: date.getMonth() === month,
+          year: calendarDate.year,
+          month: calendarDate.month,
+          weekdayShortLabel: calendarDate.weekdayShortLabel,
+          monthDayLabel: calendarDate.monthDayLabel,
+          lunarShortLabel: calendarDate.lunar ? calendarDate.lunar.shortLabel : '',
+          isToday: dateKey === todayKey,
           hasRecord: this.hasRecord(dateKey),
           moodColor: this.moodColor(this.diaryMap[dateKey] && this.diaryMap[dateKey].mood)
         });
@@ -272,14 +301,19 @@ export default {
     },
     selectDate(item) {
       this.selectedDateKey = item.dateKey;
+      this.currentWeekDate = parseLocalDateKey(item.dateKey);
       this.loadSelectedRecord();
     },
-    changeMonth(step) {
-      this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + step, 1);
+    changeWeek(step) {
+      const nextDate = parseLocalDateKey(this.selectedDateKey);
+      nextDate.setDate(nextDate.getDate() + (step * 7));
+      this.currentWeekDate = nextDate;
+      this.selectedDateKey = formatDateKey(nextDate);
+      this.loadSelectedRecord();
     },
     goToday() {
       const today = new Date();
-      this.currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      this.currentWeekDate = today;
       this.selectedDateKey = formatDateKey(today);
       this.loadSelectedRecord();
     },
@@ -467,54 +501,69 @@ export default {
   background: #F1ECE3;
 }
 
+.date-grid {
+  flex-wrap: nowrap;
+  margin-top: 8rpx;
+}
+
 .week-row {
-  margin-top: 24rpx;
+  margin-top: 22rpx;
 }
 
 .week-label {
-  flex: 1;
-  text-align: center;
+  width: 14.285%;
   color: #9A9082;
-  font-size: 21rpx;
-  line-height: 1.4;
-}
-
-.date-grid {
-  flex-wrap: wrap;
-  margin-top: 12rpx;
+  font-size: 18rpx;
+  line-height: 1.25;
+  text-align: center;
 }
 
 .date-cell {
   width: 14.285%;
-  height: 72rpx;
+  height: 94rpx;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
+  border-radius: 14rpx;
+  box-sizing: border-box;
 }
 
 .date-number {
-  width: 52rpx;
-  height: 52rpx;
-  border-radius: 50%;
   color: #302A23;
-  font-size: 25rpx;
-  line-height: 52rpx;
+  font-size: 22rpx;
+  line-height: 1.25;
   text-align: center;
 }
 
-.date-cell-muted .date-number {
-  color: #C1B8AC;
+.date-lunar {
+  color: #9A9082;
+  font-size: 17rpx;
+  line-height: 1.25;
+  text-align: center;
 }
 
-.date-cell-active .date-number {
-  background: #302A23;
-  color: #FBFAF6;
+.date-number {
+  margin-bottom: 7rpx;
+}
+
+.date-cell-today {
+  border: 1rpx solid rgba(109, 89, 69, 0.42);
+}
+
+.date-cell-active {
+  background: rgba(109, 89, 69, 0.14);
+}
+
+.date-cell-active .date-number,
+.date-cell-active .date-lunar {
+  color: #302A23;
 }
 
 .record-dot {
   position: absolute;
-  bottom: 5rpx;
+  bottom: 4rpx;
   left: 50%;
   width: 9rpx;
   height: 9rpx;
@@ -669,29 +718,23 @@ export default {
 }
 
 .calendar-page {
-  --ui-bg-1: #F8F2E8;
-  --ui-bg-2: #EFE5D5;
-  --ui-bg-3: #E7EADF;
-  --ui-card: rgba(255, 252, 246, 0.66);
-  --ui-border: rgba(255, 255, 255, 0.58);
-  --ui-text: #2F2A24;
-  --ui-muted: rgba(47, 42, 36, 0.58);
-  --ui-accent: #6D5945;
-  background:
-    radial-gradient(circle at 16% 8%, rgba(232, 188, 128, 0.24) 0%, rgba(255, 255, 255, 0) 34%),
-    linear-gradient(145deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 52%, var(--ui-bg-3) 100%);
+  --ui-card: var(--pety-surface, #FCFAF6);
+  --ui-border: var(--pety-rule, #E4DED4);
+  --ui-text: var(--pety-text, #2F2A24);
+  --ui-muted: var(--pety-text-secondary, #786F64);
+  --ui-accent: var(--pety-primary, #6D5945);
+  --ui-soft: var(--pety-primary-soft, #EAE1D6);
+  background: var(--pety-page-bg, #F5F2EC);
   animation: calendarFadeUp 520ms ease both;
 }
 
 .calendar-page.theme-memorial {
-  --ui-bg-1: #F3F1ED;
-  --ui-bg-2: #E5E7EE;
-  --ui-bg-3: #DDD8E8;
-  --ui-card: rgba(255, 255, 255, 0.58);
-  --ui-border: rgba(255, 255, 255, 0.54);
-  --ui-text: #292B32;
-  --ui-muted: rgba(41, 43, 50, 0.56);
-  --ui-accent: #5F6478;
+  --ui-card: var(--pety-surface, #FAF9FB);
+  --ui-border: var(--pety-rule, #DDDDE3);
+  --ui-text: var(--pety-text, #2D2E35);
+  --ui-muted: var(--pety-text-secondary, #737580);
+  --ui-accent: var(--pety-primary, #62677A);
+  --ui-soft: var(--pety-primary-soft, #E2E3EA);
 }
 
 .icon-button,
@@ -736,12 +779,34 @@ export default {
   transition: transform 140ms ease, background 140ms ease;
 }
 
-.date-cell-active .date-number,
+.date-cell-active,
+.mood-chip-active,
+.event-chip-active,
+.save-btn {
+  border-color: transparent;
+}
+
 .mood-chip-active,
 .event-chip-active,
 .save-btn {
   background: var(--ui-accent);
-  border-color: transparent;
+}
+
+.date-cell-active {
+  background: var(--ui-soft);
+}
+
+.date-cell-active .date-number,
+.date-cell-active .date-lunar {
+  color: var(--ui-text);
+}
+
+.calendar-page.theme-memorial .date-cell-active {
+  background: var(--ui-soft);
+}
+
+.calendar-page.theme-memorial .date-cell-today {
+  border-color: rgba(95, 100, 120, 0.44);
 }
 
 .icon-button,

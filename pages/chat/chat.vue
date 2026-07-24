@@ -2,9 +2,9 @@
   <view :class="['chat-page', themeClass]">
     <view class="chat-header">
       <view
-        :class="['pet-mini', isMemorialMode ? 'memorial-avatar-link' : '']"
-        :hover-class="isMemorialMode ? 'memorial-avatar-link-hover' : 'none'"
-        @click.stop="openMemorialPetArchive(activePetId)"
+        class="pet-mini memorial-avatar-link"
+        hover-class="memorial-avatar-link-hover"
+        @click.stop="openPetArchive(activePetId)"
       >
         <image v-if="headerPetAvatar" :src="headerPetAvatar" class="pet-mini-img" mode="aspectFill"></image>
         <text v-else class="pet-mini-text">归</text>
@@ -187,11 +187,11 @@
           </button>
         </view>
         <input
-          v-if="selectedOwnerCallType === 'name' || selectedOwnerCallType === 'custom'"
+          v-if="selectedOwnerCallType === 'custom'"
           v-model="customOwnerCall"
           class="owner-call-input"
           maxlength="20"
-          :placeholder="selectedOwnerCallType === 'name' ? '输入你的名字或昵称' : '输入想让我使用的称呼'"
+          placeholder="输入想让我使用的称呼"
           placeholder-style="color:#9995A1"
         />
         <view class="owner-call-actions">
@@ -232,6 +232,8 @@ import {
   saveMemorialOwnerCall
 } from '../../common/memorial-owner-call.js';
 import {
+  getCurrentAssistantOwnerCall,
+  getMemorialOwnerCall,
   getPetRelationshipStage,
   getRelationshipChatBoundaryRules,
   getRelationshipChatCopy,
@@ -361,7 +363,7 @@ export default {
       return getTypingLabel(this.activePet || { name: this.activePetName });
     },
     headerPetAvatar() {
-      return this.isMemorialMode ? this.memorialPetAvatar : this.activePetPhoto;
+      return this.memorialPetAvatar;
     },
     contextBadges() {
       const badges = [];
@@ -408,6 +410,39 @@ export default {
     openMemorialMessageArchive(message) {
       if (!message || message.type === 'user') return;
       this.openMemorialPetArchive(message.petId);
+    },
+    openPetArchive(expectedPetId) {
+      if (this.isArchiveNavigationLocked) return;
+
+      const activePet = getActivePet();
+      const activePetId = String(activePet && activePet.id || '');
+      const clickedPetId = String(expectedPetId || this.activePetId || '');
+      const activeStage = activePet ? getPetRelationshipStage(activePet) : 'current';
+      const activeContextId = getChatContextId(activePetId, activeStage);
+      const currentPagePetId = String(this.activePetId || '');
+
+      if (
+        !activePetId ||
+        clickedPetId !== activePetId ||
+        currentPagePetId !== activePetId ||
+        activeStage !== this.activeStatus ||
+        this.loadedChatContextId !== activeContextId
+      ) {
+        return;
+      }
+
+      this.safeVibrate();
+      this.isArchiveNavigationLocked = true;
+      this.suppressOwnerCallPromptOnce = true;
+
+      uni.navigateTo({
+        url: `/pages/archive/archive?petId=${encodeURIComponent(activePetId)}&from=chat`,
+        fail: () => {
+          this.isArchiveNavigationLocked = false;
+          this.suppressOwnerCallPromptOnce = false;
+          uni.showToast({ title: '暂时无法打开档案，请稍后再试', icon: 'none' });
+        }
+      });
     },
     openMemorialPetArchive(expectedPetId) {
       if (!this.isMemorialMode || this.isArchiveNavigationLocked) return;
@@ -519,7 +554,7 @@ export default {
     },
     maybeShowOwnerCallSetup() {
       if (!this.isMemorialMode || !this.activePetId || !this.activePet) return;
-      if (this.activePet.ownerPreferredCall) return;
+      if (getMemorialOwnerCall(this.activePet)) return;
       if (hasSeenMemorialOwnerCallPrompt(this.activePetId)) return;
       this.openOwnerCallSetup(false);
     },
@@ -531,7 +566,7 @@ export default {
     },
     selectOwnerCallOption(option) {
       this.selectedOwnerCallType = option.key;
-      if (option.value) this.customOwnerCall = '';
+      if (option.key !== 'custom') this.customOwnerCall = '';
     },
     skipOwnerCallSetup() {
       markMemorialOwnerCallPromptSeen(this.activePetId);
@@ -793,8 +828,9 @@ export default {
         '以下只包含主人明确提供的信息，不得补写未出现的细节。',
         `宠物名：${this.activePetName}`
       ];
-      if (this.activePet.ownerPreferredCall) {
-        lines.push(`主人希望你称呼他/她为：${this.compactMemorialText(this.activePet.ownerPreferredCall, 20)}`);
+      const memorialOwnerCall = getMemorialOwnerCall(this.activePet);
+      if (memorialOwnerCall) {
+        lines.push(`主人希望你称呼他/她为：${this.compactMemorialText(memorialOwnerCall, 20)}`);
       }
 
       if (profile.updatedAt) {
@@ -1084,8 +1120,11 @@ export default {
           relationshipStage: currentRelationshipStage,
           petName: this.activePetName,
           conversationHistory,
+          ownerRelationCall: currentRelationshipStage === 'deceased'
+            ? getMemorialOwnerCall(this.activePet)
+            : getCurrentAssistantOwnerCall(this.activePet),
           ownerPreferredCall: currentRelationshipStage === 'deceased'
-            ? (this.activePet.ownerPreferredCall || '')
+            ? getMemorialOwnerCall(this.activePet)
             : ''
         }
       }).then(response => ({ response })).catch(error => ({ error }));

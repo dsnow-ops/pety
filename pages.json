@@ -87,6 +87,15 @@
 			}
 		},
 		{
+			"path": "pages/settings/settings",
+			"style": {
+				"navigationBarTitleText": "设置",
+				"navigationBarBackgroundColor": "#F7F6F2",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/auth/login",
 			"style": {
 				"navigationBarTitleText": "",

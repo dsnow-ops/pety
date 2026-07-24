@@ -1,17 +1,14 @@
 import { getActivePet, updateActivePet } from './pet-store.js';
+import {
+  getOwnerRelationPatch,
+  normalizeOwnerRelation,
+  OWNER_RELATION_OPTIONS
+} from './relationship-config.js';
 
 const OWNER_CALL_PROMPT_KEY_PREFIX = 'memorial_owner_call_prompt_seen_';
 
-export const MEMORIAL_OWNER_CALL_OPTIONS = Object.freeze([
-  { key: 'mother', label: '妈妈', value: '妈妈' },
-  { key: 'father', label: '爸爸', value: '爸爸' },
-  { key: 'sister', label: '姐姐', value: '姐姐' },
-  { key: 'brother', label: '哥哥', value: '哥哥' },
-  { key: 'owner', label: '主人', value: '主人' },
-  { key: 'name', label: '名字', value: '' },
-  { key: 'custom', label: '自定义', value: '' },
-  { key: 'unset', label: '暂不设置', value: '' }
-]);
+// Compatibility export for existing memorial UI imports.
+export const MEMORIAL_OWNER_CALL_OPTIONS = OWNER_RELATION_OPTIONS;
 
 export function getMemorialOwnerCallPromptKey(petId) {
   return `${OWNER_CALL_PROMPT_KEY_PREFIX}${petId || 'unknown'}`;
@@ -25,61 +22,45 @@ export function markMemorialOwnerCallPromptSeen(petId) {
   uni.setStorageSync(getMemorialOwnerCallPromptKey(petId), true);
 }
 
-export function getMemorialOwnerCallDraft(pet = {}) {
-  const ownerCallType = String(pet.ownerCallType || '');
-  const ownerPreferredCall = String(pet.ownerPreferredCall || '');
-  const knownOption = MEMORIAL_OWNER_CALL_OPTIONS.find(option => option.key === ownerCallType);
-
-  if (knownOption) {
-    return {
-      selectedType: knownOption.key,
-      customValue: ['name', 'custom'].includes(knownOption.key) ? ownerPreferredCall : ''
-    };
-  }
-
+export function getOwnerRelationDraft(pet = {}) {
+  const relation = normalizeOwnerRelation(pet);
   return {
-    selectedType: ownerPreferredCall ? 'custom' : '',
-    customValue: ownerPreferredCall
+    selectedType: relation.ownerRelationKey,
+    customValue: relation.ownerRelationKey === 'custom' ? relation.ownerRelationCustom : ''
   };
 }
 
-export function resolveMemorialOwnerCall(selectedType, customValue = '') {
-  const option = MEMORIAL_OWNER_CALL_OPTIONS.find(item => item.key === selectedType);
+export function getMemorialOwnerCallDraft(pet = {}) {
+  return getOwnerRelationDraft(pet);
+}
+
+export function resolveOwnerRelation(selectedType, customValue = '') {
+  const option = OWNER_RELATION_OPTIONS.find(item => item.key === selectedType);
   if (!option) {
-    return { ok: false, error: '请先选择一个称呼' };
+    return { ok: false, error: '请先选择你和宝贝的关系' };
   }
 
-  if (option.key === 'unset') {
-    return {
-      ok: true,
-      value: '',
-      patch: {
-        ownerPreferredCall: '',
-        ownerCallType: ''
-      }
-    };
-  }
-
-  const value = option.value || String(customValue || '').replace(/\s+/g, ' ').trim();
-  if (!value) {
+  const patch = getOwnerRelationPatch(selectedType, customValue);
+  if (!patch) {
     return {
       ok: false,
-      error: option.key === 'name' ? '请输入名字或昵称' : '请输入自定义称呼'
+      error: selectedType === 'custom' ? '请输入自定义关系' : '请选择有效关系'
     };
   }
 
   return {
     ok: true,
-    value: value.slice(0, 20),
-    patch: {
-      ownerPreferredCall: value.slice(0, 20),
-      ownerCallType: option.key
-    }
+    value: patch.ownerPreferredCall,
+    patch
   };
 }
 
-export function saveMemorialOwnerCall(petId, selectedType, customValue = '') {
-  const resolved = resolveMemorialOwnerCall(selectedType, customValue);
+export function resolveMemorialOwnerCall(selectedType, customValue = '') {
+  return resolveOwnerRelation(selectedType, customValue);
+}
+
+export function saveOwnerRelation(petId, selectedType, customValue = '') {
+  const resolved = resolveOwnerRelation(selectedType, customValue);
   if (!resolved.ok) return resolved;
 
   const activePet = getActivePet();
@@ -89,7 +70,7 @@ export function saveMemorialOwnerCall(petId, selectedType, customValue = '') {
 
   const pet = updateActivePet(resolved.patch);
   if (!pet || String(pet.id || '') !== String(petId || '')) {
-    return { ok: false, error: '称呼保存失败，请稍后再试' };
+    return { ok: false, error: '关系保存失败，请稍后再试' };
   }
 
   markMemorialOwnerCallPromptSeen(petId);
@@ -97,4 +78,8 @@ export function saveMemorialOwnerCall(petId, selectedType, customValue = '') {
     ...resolved,
     pet
   };
+}
+
+export function saveMemorialOwnerCall(petId, selectedType, customValue = '') {
+  return saveOwnerRelation(petId, selectedType, customValue);
 }

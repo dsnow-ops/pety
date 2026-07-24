@@ -43,16 +43,16 @@
         <view class="section-card memorial-mode-card">
           <text class="section-title">关系模式</text>
           <text class="memorial-mode-desc">{{ memorialModeDesc }}</text>
-          <view v-if="isMemorialArchive" class="memorial-chat-setting">
-            <text class="memorial-setting-title">和他/她说话时</text>
+          <view class="memorial-chat-setting">
+            <text class="memorial-setting-title">你和 {{ activePet.name }} 的关系</text>
             <view
               class="memorial-setting-row"
               hover-class="memorial-setting-row-hover"
               @click="openOwnerCallSetup"
             >
               <view class="memorial-setting-copy">
-                <text class="memorial-setting-label">他/她怎么称呼你</text>
-                <text class="memorial-setting-desc">用于纪念对话中的自然称呼</text>
+                <text class="memorial-setting-label">关系称呼</text>
+                <text class="memorial-setting-desc">{{ ownerRelationDesc }}</text>
               </view>
               <view class="memorial-setting-value">
                 <text>{{ ownerCallDisplayText }}</text>
@@ -192,8 +192,8 @@
 
     <view v-if="showOwnerCallSetup" class="owner-call-mask" @click="closeOwnerCallSetup">
       <view class="owner-call-sheet" @click.stop>
-        <text class="owner-call-title">他/她怎么称呼你？</text>
-        <text class="owner-call-subtitle">选择一个熟悉的称呼，返回纪念对话后会立即生效。</text>
+        <text class="owner-call-title">你和 {{ activePet && activePet.name }} 的关系</text>
+        <text class="owner-call-subtitle">{{ ownerRelationSheetSubtitle }}</text>
         <view class="owner-call-options">
           <button
             v-for="option in ownerCallOptions"
@@ -206,11 +206,11 @@
           </button>
         </view>
         <input
-          v-if="selectedOwnerCallType === 'name' || selectedOwnerCallType === 'custom'"
+          v-if="selectedOwnerCallType === 'custom'"
           v-model="customOwnerCall"
           class="owner-call-input"
           maxlength="20"
-          :placeholder="selectedOwnerCallType === 'name' ? '输入你的名字或昵称' : '输入想让他/她使用的称呼'"
+          placeholder="输入自定义关系"
           placeholder-style="color:#9995A1"
         />
         <view class="owner-call-actions">
@@ -223,9 +223,9 @@
 </template>
 
 <script>
-import { getActivePet, updateActivePet } from '../../common/pet-store.js';
+import { getActivePet, setActivePet, updateActivePet } from '../../common/pet-store.js';
 import { getPetProfile, getProfileCompletion, savePetProfile } from '../../common/profile-store.js';
-import { getPetRelationshipStage, getRelationshipConfig, getRelationshipThemeClass, isMemorialMode, withRelationshipStage } from '../../common/relationship-config.js';
+import { getOwnerRelationLabel, getPetRelationshipStage, getRelationshipConfig, getRelationshipThemeClass, isMemorialMode, withRelationshipStage } from '../../common/relationship-config.js';
 import { createAvatarJob, getAvatarDisplayImage, getAvatarStatusText, getAvatarStyleText, saveGeneratedAvatar } from '../../common/pet-avatar-generator.js';
 import {
   getMemorialOwnerCallDraft,
@@ -237,6 +237,7 @@ export default {
   data() {
     return {
       activePet: null,
+      routePetId: '',
       form: getPetProfile(),
       showOwnerCallSetup: false,
       selectedOwnerCallType: '',
@@ -294,20 +295,35 @@ export default {
       return isMemorialMode(this.relationshipStage);
     },
     ownerCallDisplayText() {
-      return this.activePet && this.activePet.ownerPreferredCall
-        ? this.activePet.ownerPreferredCall
-        : '暂不设置';
+      return getOwnerRelationLabel(this.activePet) || '暂不设置';
+    },
+    ownerRelationDesc() {
+      if (this.isMemorialArchive) {
+        return '纪念对话中，他/她可以直接这样称呼你';
+      }
+      const relation = getOwnerRelationLabel(this.activePet);
+      return relation
+        ? `照护建议需要称呼时，会使用“${this.activePet.name}的${relation}”`
+        : '用于档案关系；照护助手不会自行猜测称呼';
+    },
+    ownerRelationSheetSubtitle() {
+      return this.isMemorialArchive
+        ? '纪念对话中，他/她可以直接使用这个称呼。'
+        : `照护助手需要称呼时，只会使用“${this.activePet && this.activePet.name}的关系称呼”。`;
     },
     completion() {
       return getProfileCompletion(this.form);
     }
+  },
+  onLoad(options = {}) {
+    this.routePetId = String(options.petId || '');
   },
   onShow() {
     this.loadArchive();
   },
   methods: {
     loadArchive() {
-      const activePet = getActivePet();
+      const activePet = this.routePetId ? (setActivePet(this.routePetId) || getActivePet()) : getActivePet();
       this.activePet = activePet;
       this.form = activePet ? getPetProfile(activePet.id) : getPetProfile();
       this.showOwnerCallSetup = false;
@@ -362,7 +378,7 @@ export default {
       uni.showToast({ title: toastTitle, icon: 'none' });
     },
     openOwnerCallSetup() {
-      if (!this.activePet || !this.isMemorialArchive) return;
+      if (!this.activePet) return;
       const draft = getMemorialOwnerCallDraft(this.activePet);
       this.selectedOwnerCallType = draft.selectedType;
       this.customOwnerCall = draft.customValue;
@@ -373,7 +389,7 @@ export default {
     },
     selectOwnerCallOption(option) {
       this.selectedOwnerCallType = option.key;
-      if (option.value || option.key === 'unset') this.customOwnerCall = '';
+      if (option.key !== 'custom') this.customOwnerCall = '';
     },
     saveOwnerCall() {
       const result = saveMemorialOwnerCall(

@@ -1,43 +1,74 @@
 <template>
-  <view class="profile-page">
+  <view :class="['profile-page', themeClass]">
     <scroll-view scroll-y class="profile-scroll">
-      <view class="profile-hero">
-        <view class="hero-title-row">
-          <view>
-            <text class="hero-kicker">LUMIÈRE PET</text>
-            <text class="hero-title">我的归爪</text>
-          </view>
-          <button class="icon-button" hover-class="icon-button-hover" @click="editActivePet">
-            <uni-icons type="compose" size="21" color="#302A23"></uni-icons>
-          </button>
+      <view class="profile-header">
+        <view>
+          <text class="page-kicker">归爪 Lumière Pet</text>
+          <text class="page-title">我的归爪</text>
         </view>
-
-        <view v-if="activePet" class="active-pet">
-          <image :src="activePet.photo || activePet.avatar" class="active-avatar" mode="aspectFill"></image>
-          <view class="active-info">
-            <text class="active-name">{{ activePet.name || '我的宝贝' }}</text>
-            <text class="active-desc">{{ activePetDesc }}</text>
-          </view>
-        </view>
-
-        <view v-else class="empty-pet">
-          <view class="empty-mark">归</view>
-          <view class="active-info">
-            <text class="active-name">尚未相遇</text>
-            <text class="active-desc">先为一个生命建立入口</text>
-          </view>
-        </view>
+        <button class="icon-button" hover-class="icon-button-hover" @click="editActivePet">
+          <uni-icons type="compose" size="20" color="#4A443D"></uni-icons>
+        </button>
       </view>
 
-      <view class="stats-board">
+      <view v-if="activePet" class="relationship-surface" hover-class="surface-hover" @click="openArchive">
+        <image :src="activePetAvatar" class="active-avatar" mode="aspectFill"></image>
+        <view class="relationship-copy">
+          <text class="relationship-mode">{{ activeModeText }}</text>
+          <text class="active-name">{{ activePet.name || '我的宝贝' }}</text>
+          <text class="relationship-label">{{ ownerRelationSummary }}</text>
+          <text class="active-desc">{{ activePetDesc }}</text>
+        </view>
+        <uni-icons type="right" size="17" color="#9B948B"></uni-icons>
+      </view>
+
+      <view v-else class="relationship-surface empty-relationship" hover-class="surface-hover" @click="addPet">
+        <view class="empty-mark">归</view>
+        <view class="relationship-copy">
+          <text class="relationship-mode">本地陪伴空间</text>
+          <text class="active-name">还没有宠物档案</text>
+          <text class="active-desc">从名字和一张照片开始</text>
+        </view>
+        <uni-icons type="right" size="17" color="#9B948B"></uni-icons>
+      </view>
+
+      <view class="section-block">
+        <view class="section-head">
+          <view>
+            <text class="section-title">宠物管理</text>
+            <text class="section-meta">{{ membershipText }}</text>
+          </view>
+          <button class="section-action" hover-class="section-action-hover" @click="addPet">
+            <uni-icons type="plus" size="15" color="#6D5945"></uni-icons>
+            <text>添加</text>
+          </button>
+        </view>
+        <scroll-view v-if="petList.length" scroll-x class="pet-strip">
+          <view
+            v-for="pet in petList"
+            :key="pet.id"
+            :class="['pet-chip', pet.id === activePetId ? 'pet-chip-active' : '']"
+            @click="selectPet(pet)"
+          >
+            <button class="pet-delete" hover-class="pet-delete-hover" @click.stop="confirmDeletePet(pet)">
+              <uni-icons type="closeempty" size="14" :color="pet.id === activePetId ? '#FFFFFF' : '#8C7557'"></uni-icons>
+            </button>
+            <image :src="petAvatar(pet)" class="pet-chip-img" mode="aspectFill"></image>
+            <text class="pet-chip-name">{{ pet.name }}</text>
+            <text class="pet-chip-status">{{ statusLabel(pet.relationshipStage || pet.status) }}</text>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="stats-strip">
         <view class="stat-item" hover-class="stat-item-hover" @click="openStats('memory')">
           <text class="stat-num">{{ memoryCount }}</text>
-          <text class="stat-label">回忆</text>
+          <text class="stat-label">记录</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item" hover-class="stat-item-hover" @click="openStats('events')">
           <text class="stat-num">{{ eventCount }}</text>
-          <text class="stat-label">打卡</text>
+          <text class="stat-label">事件</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item" hover-class="stat-item-hover" @click="openStats('chat')">
@@ -46,128 +77,89 @@
         </view>
       </view>
 
-      <view class="account-panel">
-        <view class="account-copy">
-          <text class="account-title">{{ authStatusText }}</text>
-          <text class="account-desc">{{ accountDesc }}</text>
-          <text class="account-plan">{{ remotePlanText }}</text>
-        </view>
-        <view class="account-actions">
-          <button class="account-action" hover-class="account-action-hover" @click="handleAccountAction">
-            {{ accountActionText }}
-          </button>
-          <button
-            v-if="userProfile.loggedIn"
-            class="account-action account-action-light"
-            hover-class="account-action-hover"
-            @click="handleLogout"
-          >
-            退出
-          </button>
+      <view class="section-block">
+        <text class="section-title section-label">账号与备份</text>
+        <view class="group-list">
+          <view class="account-row">
+            <view class="menu-copy">
+              <text class="menu-title">{{ authStatusText }}</text>
+              <text class="menu-desc">{{ accountDesc }}</text>
+              <text class="account-note">{{ remotePlanText }}</text>
+            </view>
+            <view class="account-actions">
+              <button class="account-action" hover-class="account-action-hover" @click="handleAccountAction">{{ accountActionText }}</button>
+              <button v-if="userProfile.loggedIn" class="account-action account-action-light" hover-class="account-action-hover" @click="handleLogout">退出</button>
+            </view>
+          </view>
         </view>
       </view>
 
-      <view v-if="petList.length" class="pet-switch-section">
-        <view class="section-head">
-          <view>
-            <text class="section-title">宝贝列表</text>
-            <text class="section-meta">{{ membershipText }}</text>
+      <view class="section-block">
+        <text class="section-title section-label">宠物功能</text>
+        <view class="group-list">
+          <view class="menu-item" hover-class="menu-item-hover" @click="openArchive">
+            <view class="menu-icon"><uni-icons type="folder-add" size="21" color="#4A443D"></uni-icons></view>
+            <view class="menu-copy">
+              <text class="menu-title">宠物生命档案</text>
+              <text class="menu-desc">关系、健康背景、习惯与形象</text>
+            </view>
+            <uni-icons type="right" size="16" color="#A09A92"></uni-icons>
           </view>
-          <button class="section-action" hover-class="section-action-hover" @click="addPet">
-            <uni-icons type="plus" size="15" color="#8C7557"></uni-icons>
-            <text>添加</text>
-          </button>
-        </view>
-        <scroll-view scroll-x class="pet-strip">
-          <view
-            v-for="pet in petList"
-            :key="pet.id"
-            :class="['pet-chip', pet.id === activePetId ? 'pet-chip-active' : '']"
-            @click="selectPet(pet)"
-          >
-            <button class="pet-delete" hover-class="pet-delete-hover" @click.stop="confirmDeletePet(pet)">
-              <uni-icons type="closeempty" size="14" color="#8C7557"></uni-icons>
-            </button>
-            <image :src="pet.photo || pet.avatar" class="pet-chip-img" mode="aspectFill"></image>
-            <text class="pet-chip-name">{{ pet.name }}</text>
-            <text class="pet-chip-status">{{ statusLabel(pet.status) }}</text>
+          <view class="menu-item" hover-class="menu-item-hover" @click="openCalendar">
+            <view class="menu-icon"><uni-icons type="calendar" size="21" color="#4A443D"></uni-icons></view>
+            <view class="menu-copy">
+              <text class="menu-title">陪伴记录</text>
+              <text class="menu-desc">查看日历、状态和手写记录</text>
+            </view>
+            <uni-icons type="right" size="16" color="#A09A92"></uni-icons>
           </view>
-        </scroll-view>
-      </view>
-
-      <view class="menu-section">
-        <view class="menu-item" hover-class="menu-item-hover" @click="openArchive">
-          <view class="menu-icon">
-            <uni-icons type="folder-add" size="22" color="#3A332B"></uni-icons>
+          <view class="menu-item" hover-class="menu-item-hover" @click="comingSoon">
+            <view class="menu-icon"><uni-icons type="heart" size="21" color="#4A443D"></uni-icons></view>
+            <view class="menu-copy">
+              <text class="menu-title">回忆纪念册</text>
+              <text class="menu-desc">照片与文字整理能力尚未接入</text>
+            </view>
+            <uni-icons type="right" size="16" color="#A09A92"></uni-icons>
           </view>
-          <view class="menu-copy">
-            <text class="menu-title">宝贝档案管理</text>
-            <text class="menu-desc">年龄、体重、疫苗、习惯</text>
-          </view>
-          <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
-        </view>
-
-        <view class="menu-item" hover-class="menu-item-hover" @click="openMembership">
-          <view class="menu-icon">
-            <uni-icons type="medal" size="22" color="#3A332B"></uni-icons>
-          </view>
-          <view class="menu-copy">
-            <text class="menu-title">会员权益</text>
-            <text class="menu-desc">普通 1 只与每日 3 次问诊，会员不限宠物与每月 300 次</text>
-          </view>
-          <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
-        </view>
-
-        <view class="menu-item" hover-class="menu-item-hover" @click="openCalendar">
-          <view class="menu-icon">
-            <uni-icons type="calendar" size="22" color="#3A332B"></uni-icons>
-          </view>
-          <view class="menu-copy">
-            <text class="menu-title">日历记录</text>
-            <text class="menu-desc">状态、事件、手写备忘</text>
-          </view>
-          <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
-        </view>
-
-        <view class="menu-item" hover-class="menu-item-hover" @click="comingSoon">
-          <view class="menu-icon">
-            <uni-icons type="heart" size="22" color="#3A332B"></uni-icons>
-          </view>
-          <view class="menu-copy">
-            <text class="menu-title">回忆纪念册</text>
-            <text class="menu-desc">整理照片与文字片段</text>
-          </view>
-          <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
-        </view>
-
-        <view class="menu-item" hover-class="menu-item-hover" @click="comingSoon">
-          <view class="menu-icon">
-            <uni-icons type="cloud-upload" size="22" color="#3A332B"></uni-icons>
-          </view>
-          <view class="menu-copy">
-            <text class="menu-title">云端同步</text>
-            <text class="menu-desc">稍后接入账号与备份</text>
-          </view>
-          <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
-        </view>
-
-        <view class="menu-item" hover-class="menu-item-hover" @click="openFeedback">
-          <view class="menu-icon">
-            <uni-icons type="email" size="22" color="#3A332B"></uni-icons>
-          </view>
-          <view class="menu-copy">
-            <text class="menu-title">留言信箱</text>
-            <text class="menu-desc">建议、问题和想告诉归爪的话</text>
-          </view>
-          <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
         </view>
       </view>
 
-      <view class="about-panel">
-        <text class="about-kicker">ABOUT</text>
-        <text class="about-title">归爪 Lumière Pet</text>
-        <text class="about-desc">把日常照护、情绪陪伴与丧宠疗愈，收束成一个更安静的空间。</text>
+      <view class="section-block">
+        <text class="section-title section-label">设置与帮助</text>
+        <view class="group-list">
+          <view class="menu-item" hover-class="menu-item-hover" @click="openSettings">
+            <view class="menu-icon"><uni-icons type="gear" size="21" color="#4A443D"></uni-icons></view>
+            <view class="menu-copy">
+              <text class="menu-title">设置</text>
+              <text class="menu-desc">账号、显示、数据与归爪服务</text>
+            </view>
+            <uni-icons type="right" size="16" color="#A09A92"></uni-icons>
+          </view>
+          <view class="menu-item" hover-class="menu-item-hover" @click="openFeedback">
+            <view class="menu-icon"><uni-icons type="email" size="21" color="#4A443D"></uni-icons></view>
+            <view class="menu-copy">
+              <text class="menu-title">留言信箱</text>
+              <text class="menu-desc">建议、问题和想告诉归爪的话</text>
+            </view>
+            <uni-icons type="right" size="16" color="#A09A92"></uni-icons>
+          </view>
+        </view>
       </view>
+
+      <view class="section-block membership-block">
+        <view class="group-list">
+          <view class="menu-item" hover-class="menu-item-hover" @click="openMembership">
+            <view class="menu-icon"><uni-icons type="medal" size="21" color="#4A443D"></uni-icons></view>
+            <view class="menu-copy">
+              <text class="menu-title">会员与权益</text>
+              <text class="menu-desc">查看当前宠物数量与 AI 问诊额度规则</text>
+            </view>
+            <uni-icons type="right" size="16" color="#A09A92"></uni-icons>
+          </view>
+        </view>
+      </view>
+
+      <text class="profile-footer">归爪 Lumière Pet · 当前以本地陪伴体验为主</text>
     </scroll-view>
   </view>
 </template>
@@ -175,9 +167,16 @@
 <script>
 import { getActivePet, getPetList, removePet, setActivePet } from '../../common/pet-store.js';
 import { canCreateAnotherPet } from '../../common/pet-creation-access.js';
-import { getRelationshipConfig, setRelationshipTabBar } from '../../common/relationship-config.js';
+import {
+  getOwnerRelationLabel,
+  getPetRelationshipStage,
+  getRelationshipConfig,
+  getRelationshipThemeClass,
+  setRelationshipTabBar
+} from '../../common/relationship-config.js';
 import { clearUserCache, getCurrentUser, refreshUserProfile } from '../../common/auth-store.js';
 import { logoutUniIdAccount } from '../../common/auth-session.js';
+import { getAvatarDisplayImage } from '../../common/pet-avatar-generator.js';
 
 const UNI_ID_LOGIN_PAGE = '/uni_modules/uni-id-pages/pages/login/login-withpwd';
 
@@ -196,9 +195,25 @@ export default {
     };
   },
   computed: {
+    relationshipStage() {
+      return getPetRelationshipStage(this.activePet);
+    },
+    themeClass() {
+      return getRelationshipThemeClass(this.relationshipStage);
+    },
+    activePetAvatar() {
+      return getAvatarDisplayImage(this.activePet || {});
+    },
+    activeModeText() {
+      return this.relationshipStage === 'deceased' ? '温柔纪念' : '正在陪伴';
+    },
+    ownerRelationSummary() {
+      const relation = getOwnerRelationLabel(this.activePet);
+      return relation ? `你是 ${this.activePet.name} 的${relation}` : '你们的关系还没有设置';
+    },
     activePetDesc() {
       if (!this.activePet) return '';
-      return getRelationshipConfig(this.activePet.status).profileDesc;
+      return getRelationshipConfig(this.relationshipStage).profileDesc;
     },
     membershipText() {
       if (this.isPlusUser) return `${this.petList.length} 位 · 会员不限数量`;
@@ -220,7 +235,7 @@ export default {
     },
     remotePlanText() {
       if (!this.userProfile.loggedIn) return '当前为本地体验';
-      return this.isPlusUser ? '已开启更完整的陪伴空间' : '登录后可开启云端备份';
+      return this.isPlusUser ? '会员状态已记录，自动云备份尚未接入' : '账号状态已验证，自动云备份尚未接入';
     },
     accountActionText() {
       if (this.authLoading) return '刷新中';
@@ -308,6 +323,9 @@ export default {
     statusLabel(status) {
       return getRelationshipConfig(status).shortLabel;
     },
+    petAvatar(pet) {
+      return getAvatarDisplayImage(pet || {});
+    },
     editActivePet() {
       uni.reLaunch({ url: '/pages/welcome/welcome' });
     },
@@ -362,6 +380,9 @@ export default {
     },
     openFeedback() {
       uni.navigateTo({ url: '/pages/feedback/feedback' });
+    },
+    openSettings() {
+      uni.navigateTo({ url: '/pages/settings/settings' });
     },
     comingSoon() {
       uni.showToast({ title: '下一步接入', icon: 'none' });
@@ -933,5 +954,261 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.profile-page {
+  background: var(--pety-page-bg, #F5F2EC);
+  color: var(--pety-text, #2F2A24);
+}
+
+.profile-scroll {
+  padding: 76rpx var(--pety-page-gutter, 32rpx) calc(52rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.profile-header,
+.relationship-surface,
+.account-row {
+  display: flex;
+  align-items: center;
+}
+
+.profile-header {
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.page-kicker {
+  display: block;
+  color: var(--pety-primary, #6D5945);
+  font-size: 21rpx;
+  line-height: 1.3;
+}
+
+.page-title {
+  display: block;
+  margin-top: 7rpx;
+  color: var(--pety-text, #2F2A24);
+  font-size: 42rpx;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.icon-button {
+  width: 68rpx;
+  height: 68rpx;
+  background: var(--pety-surface, #FCFAF6);
+  box-shadow: var(--pety-shadow);
+}
+
+.relationship-surface {
+  min-height: 194rpx;
+  padding: 28rpx;
+  border: 1rpx solid var(--pety-rule, #E4DED4);
+  border-radius: 30rpx;
+  background: var(--pety-surface, #FCFAF6);
+  box-shadow: var(--pety-shadow);
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.active-avatar,
+.empty-mark {
+  width: 126rpx;
+  height: 126rpx;
+  border-radius: 34rpx;
+  flex-shrink: 0;
+  box-shadow: none;
+}
+
+.empty-mark {
+  background: var(--pety-primary, #6D5945);
+  color: #FFFFFF;
+  font-size: 40rpx;
+}
+
+.relationship-copy {
+  flex: 1;
+  min-width: 0;
+  margin: 0 22rpx;
+}
+
+.relationship-mode {
+  display: block;
+  color: var(--pety-primary, #6D5945);
+  font-size: 21rpx;
+  line-height: 1.3;
+}
+
+.active-name {
+  margin-top: 5rpx;
+  color: var(--pety-text, #2F2A24);
+  font-size: 38rpx;
+}
+
+.relationship-label {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--pety-text, #2F2A24);
+  font-size: 24rpx;
+  line-height: 1.35;
+}
+
+.active-desc {
+  margin-top: 5rpx;
+  color: var(--pety-text-secondary, #786F64);
+  font-size: 21rpx;
+}
+
+.surface-hover,
+.menu-item-hover,
+.stat-item-hover,
+.section-action-hover,
+.account-action-hover {
+  opacity: 0.86;
+  transform: scale(0.985);
+}
+
+.section-block {
+  margin-top: 34rpx;
+}
+
+.section-label {
+  display: block;
+  margin: 0 8rpx 14rpx;
+  font-size: 25rpx;
+}
+
+.section-meta {
+  color: var(--pety-text-secondary, #786F64);
+}
+
+.section-action {
+  border-color: var(--pety-rule, #E4DED4);
+  border-radius: 999rpx;
+  background: var(--pety-surface, #FCFAF6);
+  color: var(--pety-primary, #6D5945);
+  box-shadow: none;
+}
+
+.pet-chip {
+  border-color: var(--pety-rule, #E4DED4);
+  border-radius: 22rpx;
+  background: var(--pety-surface, #FCFAF6);
+  box-shadow: none;
+}
+
+.pet-chip-active {
+  background: var(--pety-primary, #6D5945);
+}
+
+.stats-strip {
+  margin-top: 24rpx;
+  min-height: 94rpx;
+  padding: 18rpx 16rpx;
+  border-top: 1rpx solid var(--pety-rule, #E4DED4);
+  border-bottom: 1rpx solid var(--pety-rule, #E4DED4);
+  display: flex;
+  align-items: center;
+}
+
+.stat-num {
+  color: var(--pety-primary, #6D5945);
+  font-size: 30rpx;
+}
+
+.stat-label {
+  margin-top: 5rpx;
+  color: var(--pety-text-secondary, #786F64);
+  font-size: 20rpx;
+}
+
+.stat-divider {
+  background: var(--pety-rule, #E4DED4);
+}
+
+.group-list {
+  overflow: hidden;
+  border: 1rpx solid var(--pety-rule, #E4DED4);
+  border-radius: var(--pety-radius, 24rpx);
+  background: var(--pety-surface, #FCFAF6);
+  box-shadow: var(--pety-shadow);
+}
+
+.menu-item,
+.account-row {
+  min-height: 98rpx;
+  padding: 20rpx 24rpx;
+  border-bottom: 1rpx solid var(--pety-rule, #E4DED4);
+  transition: transform 150ms ease, opacity 150ms ease, background 150ms ease;
+}
+
+.menu-item:last-child,
+.account-row:last-child {
+  border-bottom: none;
+}
+
+.menu-icon {
+  width: 54rpx;
+  height: 54rpx;
+  border-radius: 18rpx;
+  background: var(--pety-primary-soft, #EAE1D6);
+}
+
+.menu-copy {
+  margin: 0 18rpx;
+}
+
+.menu-title {
+  color: var(--pety-text, #2F2A24);
+  font-size: 27rpx;
+  font-weight: 500;
+}
+
+.menu-desc,
+.account-desc {
+  color: var(--pety-text-secondary, #786F64);
+  font-size: 21rpx;
+}
+
+.account-note {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--pety-primary, #6D5945);
+  font-size: 20rpx;
+  line-height: 1.35;
+}
+
+.account-actions {
+  gap: 8rpx;
+}
+
+.account-action {
+  width: 118rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  background: var(--pety-primary, #6D5945);
+  box-shadow: none;
+}
+
+.account-action.account-action-light {
+  background: var(--pety-primary-soft, #EAE1D6);
+  color: var(--pety-primary, #6D5945);
+}
+
+.membership-block {
+  opacity: 0.88;
+}
+
+.profile-footer {
+  display: block;
+  margin: 34rpx 0 10rpx;
+  color: var(--pety-text-secondary, #786F64);
+  font-size: 20rpx;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.profile-page.theme-memorial .menu-icon {
+  background: var(--pety-primary-soft, #E2E3EA);
 }
 </style>

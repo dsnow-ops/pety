@@ -66,7 +66,7 @@ const RELATIONSHIP_CONFIG = {
       '轻微问题给观察建议和记录建议，不要泛泛而谈。',
       '高风险症状必须建议及时就医。',
       '不推荐危险用药或人用药。',
-      '不使用爸爸、妈妈、姐姐、哥哥等纪念模式称呼，默认使用“你”或省略称呼。',
+      '需要称呼用户时，只能原样使用前端提供的“宠物名 + 的 + 关系”完整称呼，例如“酱酱的爸爸”；不得省略宠物名直接称爸爸、妈妈、姐姐或哥哥。未提供关系时使用“你”或省略称呼。',
       '通用医疗免责声明由前端在每个 current 会话首次有效回复后显示一次，不要在每条正文重复。',
       '只输出纯文本，不使用 markdown 粗体、标题或代码围栏。',
       '回答要分清“观察建议”和“需要就医”。'
@@ -428,6 +428,122 @@ export function isMemorialMode(stage) {
 export function getRelationshipThemeClass(stage) {
   const config = getRelationshipStage(stage);
   return config.themeClass || `theme-${config.stageKey}`;
+}
+
+export const OWNER_RELATION_OPTIONS = Object.freeze([
+  { key: 'father', label: '爸爸' },
+  { key: 'mother', label: '妈妈' },
+  { key: 'sister', label: '姐姐' },
+  { key: 'brother', label: '哥哥' },
+  { key: 'family', label: '家人' },
+  { key: 'friend', label: '朋友' },
+  { key: 'caregiver', label: '照护人' },
+  { key: 'custom', label: '自定义' },
+  { key: 'unset', label: '暂不设置' }
+]);
+
+const OWNER_RELATION_LABELS = OWNER_RELATION_OPTIONS.reduce((result, option) => {
+  if (!['custom', 'unset'].includes(option.key)) result[option.key] = option.label;
+  return result;
+}, {});
+
+function normalizeOwnerRelationText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+}
+
+export function normalizeOwnerRelation(pet = {}) {
+  const source = pet || {};
+  const preferredCall = normalizeOwnerRelationText(source.ownerPreferredCall);
+  const customValue = normalizeOwnerRelationText(source.ownerRelationCustom);
+  const requestedKey = String(source.ownerRelationKey || '');
+
+  if (Object.prototype.hasOwnProperty.call(OWNER_RELATION_LABELS, requestedKey)) {
+    return {
+      ownerRelationKey: requestedKey,
+      ownerRelationCustom: ''
+    };
+  }
+  if (requestedKey === 'custom' && (customValue || preferredCall)) {
+    return {
+      ownerRelationKey: 'custom',
+      ownerRelationCustom: customValue || preferredCall
+    };
+  }
+
+  const legacyType = String(source.ownerCallType || '');
+  if (Object.prototype.hasOwnProperty.call(OWNER_RELATION_LABELS, legacyType)) {
+    return {
+      ownerRelationKey: legacyType,
+      ownerRelationCustom: ''
+    };
+  }
+  if (['owner', 'name', 'custom'].includes(legacyType) && preferredCall) {
+    return {
+      ownerRelationKey: 'custom',
+      ownerRelationCustom: preferredCall
+    };
+  }
+
+  const matchedOption = OWNER_RELATION_OPTIONS.find(option => (
+    !['custom', 'unset'].includes(option.key) && option.label === preferredCall
+  ));
+  if (matchedOption) {
+    return {
+      ownerRelationKey: matchedOption.key,
+      ownerRelationCustom: ''
+    };
+  }
+  if (preferredCall) {
+    return {
+      ownerRelationKey: 'custom',
+      ownerRelationCustom: preferredCall
+    };
+  }
+
+  return {
+    ownerRelationKey: '',
+    ownerRelationCustom: ''
+  };
+}
+
+export function getOwnerRelationLabel(pet = {}) {
+  const relation = normalizeOwnerRelation(pet);
+  if (relation.ownerRelationKey === 'custom') return relation.ownerRelationCustom;
+  return OWNER_RELATION_LABELS[relation.ownerRelationKey] || '';
+}
+
+export function getCurrentAssistantOwnerCall(pet = {}) {
+  const petName = String(pet && (pet.name || pet.petName) || '').trim();
+  const relationLabel = getOwnerRelationLabel(pet);
+  return petName && relationLabel ? `${petName}的${relationLabel}` : '';
+}
+
+export function getMemorialOwnerCall(pet = {}) {
+  const preferredCall = normalizeOwnerRelationText(pet && pet.ownerPreferredCall);
+  return preferredCall || getOwnerRelationLabel(pet);
+}
+
+export function getOwnerRelationPatch(ownerRelationKey, ownerRelationCustom = '') {
+  const key = String(ownerRelationKey || '');
+  if (key === 'unset' || !key) {
+    return {
+      ownerRelationKey: '',
+      ownerRelationCustom: '',
+      ownerPreferredCall: '',
+      ownerCallType: ''
+    };
+  }
+
+  const custom = normalizeOwnerRelationText(ownerRelationCustom);
+  const label = key === 'custom' ? custom : OWNER_RELATION_LABELS[key];
+  if (!label) return null;
+
+  return {
+    ownerRelationKey: key,
+    ownerRelationCustom: key === 'custom' ? label : '',
+    ownerPreferredCall: label,
+    ownerCallType: key
+  };
 }
 
 function resolveCopy(copy, pet) {
