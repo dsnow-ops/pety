@@ -22,6 +22,10 @@
 ```json
 {
   "deepseek": {
+    "model": "deepseek-v4-flash",
+    "thinking": {
+      "type": "disabled"
+    },
     "temperature": 0.7,
     "maxTokens": 300,
     "requestTimeoutMs": 15000
@@ -39,6 +43,16 @@
 ```
 
 如果需要更完整的回答，可以把 `maxTokens` 提高到 500-600。上线前再根据真实成本、用户量和会员策略提高 `freeDailyLimit`、`plusMonthlyLimit`。
+
+## 模型兼容与思考模式
+
+实时短对话默认使用 `deepseek-v4-flash`，并设置 `thinking.type=disabled`。旧配置会在所有配置来源合并后归一化：
+
+- `deepseek-chat` → `deepseek-v4-flash` + `disabled`
+- `deepseek-reasoner` → `deepseek-v4-flash` + `enabled`
+- `deepseek-v4-flash`、`deepseek-v4-pro` 保持原模型名，并使用配置的思考模式
+
+其他未知模型名会在请求供应商前被阻止，不会无限重试。生产环境修改模型配置后，应重新上传部署 `api_deepseek` 云函数并检查脱敏的 `deepseek_model_resolved` 日志。
 
 ## 当前计费控制点
 
