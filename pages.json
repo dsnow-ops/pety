@@ -78,6 +78,15 @@
 			}
 		},
 		{
+			"path": "pages/feedback/feedback",
+			"style": {
+				"navigationBarTitleText": "留言信箱",
+				"navigationBarBackgroundColor": "#F7F6F2",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/auth/login",
 			"style": {
 				"navigationBarTitleText": "",

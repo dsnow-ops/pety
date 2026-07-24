@@ -1,0 +1,112 @@
+{
+  "bsonType": "object",
+  "required": [
+    "id",
+    "category",
+    "title",
+    "content",
+    "imageFileIds",
+    "userId",
+    "openid",
+    "deviceHash",
+    "includeDiagnostics",
+    "status",
+    "requestFingerprint",
+    "createdAt",
+    "updatedAt"
+  ],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "bsonType": "string",
+      "description": "Deterministic daily deduplication id."
+    },
+    "id": {
+      "bsonType": "string"
+    },
+    "category": {
+      "bsonType": "string",
+      "enum": [
+        "product_suggestion",
+        "feature_request",
+        "ui_experience",
+        "ai_conversation",
+        "bug",
+        "emotional_experience",
+        "privacy_security",
+        "other"
+      ]
+    },
+    "title": {
+      "bsonType": "string",
+      "maxLength": 60
+    },
+    "content": {
+      "bsonType": "string",
+      "minLength": 10,
+      "maxLength": 1000
+    },
+    "imageFileIds": {
+      "bsonType": "array",
+      "maxItems": 3,
+      "items": {
+        "bsonType": "string"
+      }
+    },
+    "userId": {
+      "bsonType": "string",
+      "description": "Server-derived uni-id user id, empty for guests."
+    },
+    "openid": {
+      "bsonType": "string",
+      "description": "Server-derived openid when available."
+    },
+    "deviceHash": {
+      "bsonType": "string",
+      "description": "SHA-256 of the server-side caller identity."
+    },
+    "includeDiagnostics": {
+      "bsonType": "bool"
+    },
+    "appVersion": {
+      "bsonType": "string"
+    },
+    "platform": {
+      "bsonType": "string"
+    },
+    "systemVersion": {
+      "bsonType": "string"
+    },
+    "uniPlatform": {
+      "bsonType": "string"
+    },
+    "currentPage": {
+      "bsonType": "string"
+    },
+    "isLoggedIn": {
+      "bsonType": "bool"
+    },
+    "isGuest": {
+      "bsonType": "bool"
+    },
+    "status": {
+      "bsonType": "string",
+      "enum": ["submitted"]
+    },
+    "requestFingerprint": {
+      "bsonType": "string",
+      "description": "Hash used for duplicate submission prevention."
+    },
+    "createdAt": {
+      "bsonType": "long"
+    },
+    "updatedAt": {
+      "bsonType": "long"
+    }
+  }
+}

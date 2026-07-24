@@ -150,6 +150,17 @@
           </view>
           <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
         </view>
+
+        <view class="menu-item" hover-class="menu-item-hover" @click="openFeedback">
+          <view class="menu-icon">
+            <uni-icons type="email" size="22" color="#3A332B"></uni-icons>
+          </view>
+          <view class="menu-copy">
+            <text class="menu-title">留言信箱</text>
+            <text class="menu-desc">建议、问题和想告诉归爪的话</text>
+          </view>
+          <uni-icons type="right" size="16" color="#A79B8B"></uni-icons>
+        </view>
       </view>
 
       <view class="about-panel">
@@ -348,6 +359,9 @@ export default {
     },
     openCalendar() {
       uni.navigateTo({ url: '/pages/calendar/calendar' });
+    },
+    openFeedback() {
+      uni.navigateTo({ url: '/pages/feedback/feedback' });
     },
     comingSoon() {
       uni.showToast({ title: '下一步接入', icon: 'none' });
