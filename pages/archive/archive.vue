@@ -43,6 +43,23 @@
         <view class="section-card memorial-mode-card">
           <text class="section-title">关系模式</text>
           <text class="memorial-mode-desc">{{ memorialModeDesc }}</text>
+          <view v-if="isMemorialArchive" class="memorial-chat-setting">
+            <text class="memorial-setting-title">和他/她说话时</text>
+            <view
+              class="memorial-setting-row"
+              hover-class="memorial-setting-row-hover"
+              @click="openOwnerCallSetup"
+            >
+              <view class="memorial-setting-copy">
+                <text class="memorial-setting-label">他/她怎么称呼你</text>
+                <text class="memorial-setting-desc">用于纪念对话中的自然称呼</text>
+              </view>
+              <view class="memorial-setting-value">
+                <text>{{ ownerCallDisplayText }}</text>
+                <uni-icons type="right" size="16" color="#9995A1"></uni-icons>
+              </view>
+            </view>
+          </view>
           <button
             class="mode-toggle-btn"
             hover-class="mode-toggle-btn-hover"
@@ -172,6 +189,36 @@
         <button class="save-btn" hover-class="save-btn-hover" @click="saveArchive">保存档案</button>
       </view>
     </scroll-view>
+
+    <view v-if="showOwnerCallSetup" class="owner-call-mask" @click="closeOwnerCallSetup">
+      <view class="owner-call-sheet" @click.stop>
+        <text class="owner-call-title">他/她怎么称呼你？</text>
+        <text class="owner-call-subtitle">选择一个熟悉的称呼，返回纪念对话后会立即生效。</text>
+        <view class="owner-call-options">
+          <button
+            v-for="option in ownerCallOptions"
+            :key="option.key"
+            :class="['owner-call-option', selectedOwnerCallType === option.key ? 'owner-call-option-active' : '']"
+            hover-class="owner-call-option-hover"
+            @click="selectOwnerCallOption(option)"
+          >
+            {{ option.label }}
+          </button>
+        </view>
+        <input
+          v-if="selectedOwnerCallType === 'name' || selectedOwnerCallType === 'custom'"
+          v-model="customOwnerCall"
+          class="owner-call-input"
+          maxlength="20"
+          :placeholder="selectedOwnerCallType === 'name' ? '输入你的名字或昵称' : '输入想让他/她使用的称呼'"
+          placeholder-style="color:#9995A1"
+        />
+        <view class="owner-call-actions">
+          <button class="owner-call-cancel" hover-class="owner-call-action-hover" @click="closeOwnerCallSetup">取消</button>
+          <button class="owner-call-save" hover-class="owner-call-action-hover" @click="saveOwnerCall">保存</button>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -180,12 +227,21 @@ import { getActivePet, updateActivePet } from '../../common/pet-store.js';
 import { getPetProfile, getProfileCompletion, savePetProfile } from '../../common/profile-store.js';
 import { getPetRelationshipStage, getRelationshipConfig, getRelationshipThemeClass, isMemorialMode, withRelationshipStage } from '../../common/relationship-config.js';
 import { createAvatarJob, getAvatarDisplayImage, getAvatarStatusText, getAvatarStyleText, saveGeneratedAvatar } from '../../common/pet-avatar-generator.js';
+import {
+  getMemorialOwnerCallDraft,
+  MEMORIAL_OWNER_CALL_OPTIONS,
+  saveMemorialOwnerCall
+} from '../../common/memorial-owner-call.js';
 
 export default {
   data() {
     return {
       activePet: null,
       form: getPetProfile(),
+      showOwnerCallSetup: false,
+      selectedOwnerCallType: '',
+      customOwnerCall: '',
+      ownerCallOptions: MEMORIAL_OWNER_CALL_OPTIONS,
       speciesOptions: [
         { key: 'cat', label: '猫' },
         { key: 'dog', label: '狗' },
@@ -234,6 +290,14 @@ export default {
         ? '恢复为陪伴模式'
         : (getRelationshipConfig('deceased').modeEntryLabel || '进入温柔纪念模式');
     },
+    isMemorialArchive() {
+      return isMemorialMode(this.relationshipStage);
+    },
+    ownerCallDisplayText() {
+      return this.activePet && this.activePet.ownerPreferredCall
+        ? this.activePet.ownerPreferredCall
+        : '暂不设置';
+    },
     completion() {
       return getProfileCompletion(this.form);
     }
@@ -246,6 +310,7 @@ export default {
       const activePet = getActivePet();
       this.activePet = activePet;
       this.form = activePet ? getPetProfile(activePet.id) : getPetProfile();
+      this.showOwnerCallSetup = false;
     },
     setDate(key, event) {
       this.form[key] = event.detail.value;
@@ -295,6 +360,38 @@ export default {
       const updatedPet = updateActivePet(withRelationshipStage({}, stage));
       if (updatedPet) this.activePet = updatedPet;
       uni.showToast({ title: toastTitle, icon: 'none' });
+    },
+    openOwnerCallSetup() {
+      if (!this.activePet || !this.isMemorialArchive) return;
+      const draft = getMemorialOwnerCallDraft(this.activePet);
+      this.selectedOwnerCallType = draft.selectedType;
+      this.customOwnerCall = draft.customValue;
+      this.showOwnerCallSetup = true;
+    },
+    closeOwnerCallSetup() {
+      this.showOwnerCallSetup = false;
+    },
+    selectOwnerCallOption(option) {
+      this.selectedOwnerCallType = option.key;
+      if (option.value || option.key === 'unset') this.customOwnerCall = '';
+    },
+    saveOwnerCall() {
+      const result = saveMemorialOwnerCall(
+        this.activePet && this.activePet.id,
+        this.selectedOwnerCallType,
+        this.customOwnerCall
+      );
+      if (!result.ok) {
+        uni.showToast({ title: result.error, icon: 'none' });
+        return;
+      }
+
+      this.activePet = result.pet;
+      this.showOwnerCallSetup = false;
+      uni.showToast({
+        title: result.value ? '称呼已更新' : '已暂不设置称呼',
+        icon: 'none'
+      });
     },
     regenerateAvatarMock() {
       if (!this.activePet) return;
@@ -542,6 +639,74 @@ export default {
   line-height: 1.5;
 }
 
+.memorial-chat-setting {
+  margin-top: 24rpx;
+  padding-top: 22rpx;
+  border-top: 1rpx solid rgba(140, 117, 87, 0.12);
+}
+
+.memorial-setting-title {
+  display: block;
+  color: var(--ui-text);
+  font-size: 25rpx;
+  font-weight: 600;
+}
+
+.memorial-setting-row {
+  min-height: 96rpx;
+  margin-top: 14rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid var(--ui-border);
+  background: rgba(255, 255, 255, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  box-sizing: border-box;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.memorial-setting-row-hover {
+  opacity: 0.84;
+  transform: scale(0.985);
+}
+
+.memorial-setting-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.memorial-setting-label {
+  color: var(--ui-text);
+  font-size: 26rpx;
+  line-height: 1.3;
+}
+
+.memorial-setting-desc {
+  margin-top: 6rpx;
+  color: var(--ui-muted);
+  font-size: 21rpx;
+  line-height: 1.35;
+}
+
+.memorial-setting-value {
+  flex-shrink: 0;
+  max-width: 210rpx;
+  color: var(--ui-accent);
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.memorial-setting-value text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mode-toggle-btn {
   margin-top: 22rpx;
   width: 100%;
@@ -651,6 +816,125 @@ export default {
   font-size: 30rpx;
   font-weight: 600;
   line-height: 92rpx;
+}
+
+.owner-call-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  padding: 32rpx;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(37, 38, 44, 0.34);
+}
+
+.owner-call-sheet {
+  width: 100%;
+  padding: 34rpx;
+  border-radius: 34rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.62);
+  background: rgba(248, 247, 250, 0.96);
+  box-shadow: 0 30rpx 80rpx rgba(49, 48, 60, 0.18);
+  box-sizing: border-box;
+}
+
+.owner-call-title,
+.owner-call-subtitle {
+  display: block;
+}
+
+.owner-call-title {
+  color: #292B32;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.owner-call-subtitle {
+  margin-top: 10rpx;
+  color: rgba(41, 43, 50, 0.58);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.owner-call-options {
+  margin-top: 26rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.owner-call-option {
+  min-width: 128rpx;
+  height: 68rpx;
+  margin: 0;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(95, 100, 120, 0.16);
+  background: rgba(255, 255, 255, 0.72);
+  color: #5F6478;
+  font-size: 24rpx;
+}
+
+.owner-call-option-active {
+  color: #FFFFFF;
+  background: #5F6478;
+  border-color: #5F6478;
+}
+
+.owner-call-input {
+  width: 100%;
+  height: 82rpx;
+  margin-top: 22rpx;
+  padding: 0 24rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(95, 100, 120, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+  color: #292B32;
+  font-size: 26rpx;
+  box-sizing: border-box;
+}
+
+.owner-call-actions {
+  margin-top: 30rpx;
+  display: flex;
+  gap: 16rpx;
+}
+
+.owner-call-cancel,
+.owner-call-save {
+  flex: 1;
+  height: 78rpx;
+  margin: 0;
+  border-radius: 22rpx;
+  font-size: 25rpx;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.owner-call-cancel {
+  color: #686A73;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.owner-call-save {
+  color: #FFFFFF;
+  background: #5F6478;
+}
+
+.owner-call-option::after,
+.owner-call-cancel::after,
+.owner-call-save::after {
+  border: none;
+}
+
+.owner-call-option-hover,
+.owner-call-action-hover {
+  opacity: 0.86;
+  transform: scale(0.97);
 }
 
 .archive-page {

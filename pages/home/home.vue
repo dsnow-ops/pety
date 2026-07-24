@@ -128,6 +128,7 @@
 <script>
 import { getActivePet } from '../../common/pet-store.js';
 import { formatDateKey, getDiaryRecord, getEventLabel, getMoodLabel, hasDiaryRecord } from '../../common/diary-store.js';
+import { getDailyHomeCopy } from '../../common/home-daily-copy.js';
 import { getPetProfile } from '../../common/profile-store.js';
 import { getPetRelationshipStage, getRelationshipHomeCopy, getRelationshipThemeClass, setRelationshipTabBar } from '../../common/relationship-config.js';
 
@@ -179,9 +180,13 @@ export default {
       return Boolean(this.homeHeroAvatar);
     },
     companionLine() {
-      if (!this.activePet) return '建立档案后，归爪会把它的照片、记录和故事慢慢收好。';
-      if (this.isMemorialMode) return `${this.petName} 被温柔地留在这里，今天也可以慢慢想起它。`;
-      return `${this.petName} 今天也在这里，已经陪伴你 ${this.petStats.days} 天。`;
+      if (!this.activePet) return '建立档案后，归爪会把照片、记录和故事慢慢收好。';
+      return getDailyHomeCopy({
+        petId: this.activePet.id,
+        petName: this.petName,
+        relationshipStage: this.activeRelationshipStage,
+        date: new Date()
+      });
     },
     todayPanelTitle() {
       if (!this.activePet) return '先建立档案，今天就有地方安放。';

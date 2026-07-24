@@ -162,7 +162,8 @@
 </template>
 
 <script>
-import { canCreatePet, getActivePet, getPetList, removePet, setActivePet } from '../../common/pet-store.js';
+import { getActivePet, getPetList, removePet, setActivePet } from '../../common/pet-store.js';
+import { canCreateAnotherPet } from '../../common/pet-creation-access.js';
 import { getRelationshipConfig, setRelationshipTabBar } from '../../common/relationship-config.js';
 import { clearUserCache, getCurrentUser, refreshUserProfile } from '../../common/auth-store.js';
 import { logoutUniIdAccount } from '../../common/auth-session.js';
@@ -300,8 +301,17 @@ export default {
       uni.reLaunch({ url: '/pages/welcome/welcome' });
     },
     addPet() {
-      if (!canCreatePet()) {
-        this.openMembership();
+      const access = canCreateAnotherPet();
+      if (!access.allowed) {
+        if (access.reason === 'development_limit_reached') {
+          uni.showToast({
+            title: `当前开发测试最多创建 ${access.limit} 只宠物。`,
+            icon: 'none'
+          });
+          return;
+        }
+
+        if (access.reason === 'membership_required') this.openMembership();
         return;
       }
 

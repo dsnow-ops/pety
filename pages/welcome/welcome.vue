@@ -57,7 +57,8 @@
 </template>
 
 <script>
-import { addPet, canCreatePet, getActivePet, updateActivePet } from '../../common/pet-store.js';
+import { addPet, getActivePet, updateActivePet } from '../../common/pet-store.js';
+import { canCreateAnotherPet } from '../../common/pet-creation-access.js';
 import { getPetRelationshipStage, getRelationshipConfig, normalizeRelationshipStage, withRelationshipStage } from '../../common/relationship-config.js';
 import { getAvatarStyleText, getDefaultAvatarStyle } from '../../common/pet-avatar-generator.js';
 
@@ -170,9 +171,17 @@ export default {
         return;
       }
 
-      if (!this.activePetId && !canCreatePet()) {
-        uni.showToast({ title: '普通用户只能添加一只宝贝，开通会员后可添加多只', icon: 'none' });
-        return;
+      if (!this.activePetId) {
+        const access = canCreateAnotherPet();
+        if (!access.allowed) {
+          uni.showToast({
+            title: access.reason === 'development_limit_reached'
+              ? `当前开发测试最多创建 ${access.limit} 只宠物。`
+              : '普通用户只能添加一只宝贝，开通会员后可添加多只',
+            icon: 'none'
+          });
+          return;
+        }
       }
 
       this.isAwakening = true;
