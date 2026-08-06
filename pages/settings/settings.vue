@@ -1,5 +1,5 @@
 <template>
-  <view :class="['settings-page', themeClass]">
+  <view :class="['settings-page', themeClass, reduceMotion ? 'reduce-motion' : '']">
     <scroll-view scroll-y class="settings-scroll">
       <view class="settings-header">
         <button class="back-button" hover-class="tap-soft" @click="goBack">
@@ -121,6 +121,13 @@
               <text class="row-desc">{{ memorialModeText }}</text>
             </view>
             <text class="row-status">{{ isMemorial ? '已开启' : '未开启' }}</text>
+          </view>
+          <view class="settings-row" hover-class="row-hover" @click="openMemorialPersona">
+            <view class="row-copy">
+              <text class="row-title">让归爪更像他/她</text>
+              <text class="row-desc">补充真实的小习惯、表达方式和边界</text>
+            </view>
+            <uni-icons type="right" size="16" color="#A09A92"></uni-icons>
           </view>
           <view class="settings-row" hover-class="row-hover" @click="openAvatarManager">
             <view class="row-copy">
@@ -267,6 +274,7 @@ import {
   isMemorialMode,
   withRelationshipStage
 } from '../../common/relationship-config.js';
+import { mediumHaptic } from '../../common/haptics.js';
 
 const REDUCE_MOTION_KEY = 'pety_reduce_motion_v1';
 const CACHE_STORAGE_KEYS = [];
@@ -294,7 +302,8 @@ const PROTECTED_STORAGE_PREFIXES = [
   'pet_diaries_',
   'pet_profile_',
   'consultation_records_',
-  'memorial_owner_call_prompt_seen_'
+  'memorial_owner_call_prompt_seen_',
+  'memorial_persona_'
 ];
 const LOGIN_PAGE = '/uni_modules/uni-id-pages/pages/login/login-withpwd';
 const ACCOUNT_PAGE = '/uni_modules/uni-id-pages/pages/userinfo/userinfo';
@@ -510,6 +519,7 @@ export default {
     updateRelationshipMode(stage, toastTitle) {
       const updatedPet = updateActivePet(withRelationshipStage({}, stage));
       if (updatedPet) this.activePet = updatedPet;
+      mediumHaptic();
       uni.showToast({ title: toastTitle, icon: 'none' });
     },
     openAvatarManager() {
@@ -518,6 +528,17 @@ export default {
         return;
       }
       uni.navigateTo({ url: `/pages/avatar-generate/avatar-generate?petId=${encodeURIComponent(this.activePet.id)}` });
+    },
+    openMemorialPersona() {
+      if (!this.activePet) {
+        uni.showToast({ title: '请先建立宠物档案', icon: 'none' });
+        return;
+      }
+      if (!this.isMemorial) {
+        uni.showToast({ title: '请先开启温柔纪念模式', icon: 'none' });
+        return;
+      }
+      uni.navigateTo({ url: `/pages/memorial-persona/memorial-persona?petId=${encodeURIComponent(this.activePet.id)}` });
     },
     showAiGuide() {
       this.showInfo('AI 问诊使用说明', '陪伴模式可帮助整理症状、观察点与就医前问题，但不能替代兽医诊断或治疗。高风险症状请尽快就医。');
@@ -778,5 +799,9 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.reduce-motion .settings-scroll {
+  animation: none;
 }
 </style>

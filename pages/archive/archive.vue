@@ -1,5 +1,5 @@
 <template>
-  <view :class="['archive-page', themeClass]">
+  <view :class="['archive-page', themeClass, reduceMotion ? 'reduce-motion' : '']">
     <scroll-view scroll-y class="archive-scroll">
       <view class="top-bar">
         <button class="icon-button" hover-class="icon-button-hover" @click="goBack">
@@ -59,6 +59,21 @@
                 <uni-icons type="right" size="16" color="#9995A1"></uni-icons>
               </view>
             </view>
+            <view
+              v-if="isMemorialArchive"
+              class="memorial-setting-row persona-entry"
+              hover-class="memorial-setting-row-hover"
+              @click="openMemorialPersona"
+            >
+              <view class="memorial-setting-copy">
+                <text class="memorial-setting-label">让归爪更像他/她</text>
+                <text class="memorial-setting-desc">补充真实的小习惯、表达方式和边界</text>
+              </view>
+              <view class="memorial-setting-value">
+                <text>{{ personaEntryStatus }}</text>
+                <uni-icons type="right" size="16" color="#9995A1"></uni-icons>
+              </view>
+            </view>
           </view>
           <button
             class="mode-toggle-btn"
@@ -66,6 +81,10 @@
             @click="toggleMemorialMode"
           >
             {{ memorialModeButtonText }}
+          </button>
+          <button class="archive-calendar-link" hover-class="mode-toggle-btn-hover" @click="openCalendar">
+            <uni-icons type="calendar" size="17" color="#77717B"></uni-icons>
+            <text>查看完整记录日历</text>
           </button>
         </view>
 
@@ -232,6 +251,8 @@ import {
   MEMORIAL_OWNER_CALL_OPTIONS,
   saveMemorialOwnerCall
 } from '../../common/memorial-owner-call.js';
+import { getMemorialPersona, scheduleMemorialPersonaIntro } from '../../common/memorial-persona.js';
+import { isReduceMotionEnabled, mediumHaptic } from '../../common/haptics.js';
 
 export default {
   data() {
@@ -242,6 +263,10 @@ export default {
       showOwnerCallSetup: false,
       selectedOwnerCallType: '',
       customOwnerCall: '',
+      memorialPersona: getMemorialPersona(),
+      reduceMotion: isReduceMotionEnabled(),
+      personaIntroTimer: null,
+      archiveSaveTimer: null,
       ownerCallOptions: MEMORIAL_OWNER_CALL_OPTIONS,
       speciesOptions: [
         { key: 'cat', label: '猫' },
@@ -313,6 +338,9 @@ export default {
     },
     completion() {
       return getProfileCompletion(this.form);
+    },
+    personaEntryStatus() {
+      return this.memorialPersona.completed ? '已完成' : (this.memorialPersona.updatedAt ? '继续完善' : '开始');
     }
   },
   onLoad(options = {}) {
@@ -321,12 +349,27 @@ export default {
   onShow() {
     this.loadArchive();
   },
+  onHide() {
+    this.clearPageTimers();
+  },
+  onUnload() {
+    this.clearPageTimers();
+  },
   methods: {
+    clearPageTimers() {
+      if (this.personaIntroTimer) clearTimeout(this.personaIntroTimer);
+      if (this.archiveSaveTimer) clearTimeout(this.archiveSaveTimer);
+      this.personaIntroTimer = null;
+      this.archiveSaveTimer = null;
+    },
     loadArchive() {
       const activePet = this.routePetId ? (setActivePet(this.routePetId) || getActivePet()) : getActivePet();
       this.activePet = activePet;
       this.form = activePet ? getPetProfile(activePet.id) : getPetProfile();
+      this.memorialPersona = activePet ? getMemorialPersona(activePet.id) : getMemorialPersona();
+      this.reduceMotion = isReduceMotionEnabled();
       this.showOwnerCallSetup = false;
+      this.$nextTick(() => this.schedulePersonaIntro());
     },
     setDate(key, event) {
       this.form[key] = event.detail.value;
@@ -339,7 +382,8 @@ export default {
 
       this.form = savePetProfile(this.activePet.id, this.form);
       uni.showToast({ title: '档案已保存', icon: 'success' });
-      setTimeout(() => {
+      this.archiveSaveTimer = setTimeout(() => {
+        this.archiveSaveTimer = null;
         this.goBack();
       }, 650);
     },
@@ -375,7 +419,35 @@ export default {
     updateRelationshipMode(stage, toastTitle) {
       const updatedPet = updateActivePet(withRelationshipStage({}, stage));
       if (updatedPet) this.activePet = updatedPet;
+      mediumHaptic();
       uni.showToast({ title: toastTitle, icon: 'none' });
+      if (stage === 'deceased') {
+        this.schedulePersonaIntro();
+      }
+    },
+    schedulePersonaIntro() {
+      if (this.personaIntroTimer) clearTimeout(this.personaIntroTimer);
+      if (!this.activePet) return;
+      const petId = this.activePet.id;
+      const stage = this.relationshipStage;
+      this.personaIntroTimer = scheduleMemorialPersonaIntro({
+        petId,
+        relationshipStage: stage,
+        delay: 420,
+        isStillCurrent: () => Boolean(
+          this.activePet &&
+          this.activePet.id === petId &&
+          this.relationshipStage === stage
+        ),
+        onStart: () => this.openMemorialPersona()
+      });
+    },
+    openMemorialPersona() {
+      if (!this.activePet) return;
+      uni.navigateTo({ url: `/pages/memorial-persona/memorial-persona?petId=${encodeURIComponent(this.activePet.id)}` });
+    },
+    openCalendar() {
+      uni.navigateTo({ url: '/pages/calendar/calendar' });
     },
     openOwnerCallSetup() {
       if (!this.activePet) return;
@@ -979,7 +1051,7 @@ export default {
 }
 
 .archive-scroll {
-  animation: archiveFadeUp 520ms ease both;
+  animation: archiveFadeUp 360ms ease both;
 }
 
 .icon-button,
@@ -1061,5 +1133,34 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.persona-entry {
+  margin-top: 12rpx;
+  border-top: 1rpx solid var(--ui-border);
+}
+
+.archive-calendar-link {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 20rpx;
+  margin: 14rpx 0 0;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.36);
+  color: var(--ui-text);
+  font-size: 24rpx;
+  line-height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.archive-calendar-link::after {
+  border: none;
+}
+
+.reduce-motion .archive-scroll {
+  animation: none;
 }
 </style>

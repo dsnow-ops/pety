@@ -51,6 +51,13 @@
 			}
 		},
 		{
+			"path": "pages/memorial-persona/memorial-persona",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/care/care",
 			"style": {
 				"navigationBarTitleText": "就医服务",

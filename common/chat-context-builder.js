@@ -1,3 +1,5 @@
+import { buildMemorialPersonaChatContext, getMemorialPersona } from './memorial-persona.js';
+
 const DEFAULT_MAX_MESSAGES = 10;
 const DEFAULT_MAX_ITEM_CHARS = 360;
 const DEFAULT_MAX_TOTAL_CHARS = 2200;
@@ -108,4 +110,9 @@ export function hasMedicalNoticeShown(messages, petId, stage) {
     message.relationshipStage === 'current' &&
     message.medicalNotice === true
   ));
+}
+
+export function buildConfirmedMemorialPersonaContext(petId, relationshipStage) {
+  if (relationshipStage !== 'deceased' || !petId) return null;
+  return buildMemorialPersonaChatContext(getMemorialPersona(petId));
 }

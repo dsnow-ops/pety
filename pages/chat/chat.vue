@@ -1,5 +1,5 @@
 <template>
-  <view :class="['chat-page', themeClass]">
+  <view :class="['chat-page', themeClass, reduceMotion ? 'reduce-motion' : '']">
     <view class="chat-header">
       <view
         class="pet-mini memorial-avatar-link"
@@ -209,6 +209,7 @@ import { buildDiaryContext, getDiaryMap } from '../../common/diary-store.js';
 import { buildProfileContext, getGenderLabel, getPetProfile, getSpeciesLabel } from '../../common/profile-store.js';
 import { saveConsultationRecord } from '../../common/consultation-store.js';
 import {
+  buildConfirmedMemorialPersonaContext,
   buildChatConversationHistory,
   hasMedicalNoticeShown,
   sanitizeChatPlainText
@@ -231,6 +232,11 @@ import {
   MEMORIAL_OWNER_CALL_OPTIONS,
   saveMemorialOwnerCall
 } from '../../common/memorial-owner-call.js';
+import { isReduceMotionEnabled } from '../../common/haptics.js';
+import {
+  scheduleMemorialPersonaIntro,
+  shouldShowMemorialPersonaIntro
+} from '../../common/memorial-persona.js';
 import {
   getCurrentAssistantOwnerCall,
   getMemorialOwnerCall,
@@ -327,7 +333,9 @@ export default {
       showOwnerCallSetup: false,
       selectedOwnerCallType: '',
       customOwnerCall: '',
-      ownerCallOptions: MEMORIAL_OWNER_CALL_OPTIONS
+      ownerCallOptions: MEMORIAL_OWNER_CALL_OPTIONS,
+      reduceMotion: isReduceMotionEnabled(),
+      personaIntroTimer: null
     };
   },
   computed: {
@@ -392,21 +400,46 @@ export default {
     }
   },
   onShow() {
+    this.reduceMotion = isReduceMotionEnabled();
     const shouldSuppressOwnerCallPrompt = this.suppressOwnerCallPromptOnce;
     this.suppressOwnerCallPromptOnce = false;
     this.isArchiveNavigationLocked = false;
     this.showOwnerCallSetup = false;
     this.syncActiveChatContext();
     this.applyPendingPrompt();
-    if (!shouldSuppressOwnerCallPrompt) this.maybeShowOwnerCallSetup();
+    const personaIntroPending = shouldShowMemorialPersonaIntro(this.activePetId, this.activeStatus);
+    if (!shouldSuppressOwnerCallPrompt && !personaIntroPending) this.maybeShowOwnerCallSetup();
+    this.schedulePersonaIntro();
   },
   onHide() {
+    this.clearPersonaIntroTimer();
     this.clearInteractionTimers();
   },
   onUnload() {
+    this.clearPersonaIntroTimer();
     this.clearInteractionTimers();
   },
   methods: {
+    clearPersonaIntroTimer() {
+      if (!this.personaIntroTimer) return;
+      clearTimeout(this.personaIntroTimer);
+      this.personaIntroTimer = null;
+    },
+    schedulePersonaIntro() {
+      this.clearPersonaIntroTimer();
+      const petId = this.activePetId;
+      const stage = this.activeStatus;
+      if (!petId) return;
+      this.personaIntroTimer = scheduleMemorialPersonaIntro({
+        petId,
+        relationshipStage: stage,
+        delay: 420,
+        isStillCurrent: () => this.activePetId === petId && this.activeStatus === stage,
+        onStart: () => {
+          uni.navigateTo({ url: `/pages/memorial-persona/memorial-persona?petId=${encodeURIComponent(petId)}` });
+        }
+      });
+    },
     openMemorialMessageArchive(message) {
       if (!message || message.type === 'user') return;
       this.openMemorialPetArchive(message.petId);
@@ -1125,7 +1158,10 @@ export default {
             : getCurrentAssistantOwnerCall(this.activePet),
           ownerPreferredCall: currentRelationshipStage === 'deceased'
             ? getMemorialOwnerCall(this.activePet)
-            : ''
+            : '',
+          memorialPersona: currentRelationshipStage === 'deceased'
+            ? buildConfirmedMemorialPersonaContext(requestPetId, currentRelationshipStage)
+            : null
         }
       }).then(response => ({ response })).catch(error => ({ error }));
 
@@ -1997,7 +2033,7 @@ export default {
   background:
     radial-gradient(circle at 18% 4%, rgba(232, 188, 128, 0.24) 0%, rgba(255, 255, 255, 0) 34%),
     linear-gradient(145deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 52%, var(--ui-bg-3) 100%);
-  animation: chatFadeUp 480ms ease both;
+  animation: chatFadeUp 360ms ease both;
 }
 
 .chat-page.theme-memorial {
@@ -2110,5 +2146,9 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.reduce-motion.chat-page {
+  animation: none;
 }
 </style>

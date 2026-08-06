@@ -1,5 +1,5 @@
 <template>
-  <view :class="['profile-page', themeClass]">
+  <view :class="['profile-page', themeClass, reduceMotion ? 'reduce-motion' : '']">
     <scroll-view scroll-y class="profile-scroll">
       <view class="profile-header">
         <view>
@@ -12,7 +12,7 @@
       </view>
 
       <view v-if="activePet" class="relationship-surface" hover-class="surface-hover" @click="openArchive">
-        <image :src="activePetAvatar" class="active-avatar" mode="aspectFill"></image>
+        <image :src="activePetAvatar" class="active-avatar" mode="aspectFill" @click.stop="openAvatarArchive" @error="handleActiveAvatarError"></image>
         <view class="relationship-copy">
           <text class="relationship-mode">{{ activeModeText }}</text>
           <text class="active-name">{{ activePet.name || '我的宝贝' }}</text>
@@ -176,7 +176,8 @@ import {
 } from '../../common/relationship-config.js';
 import { clearUserCache, getCurrentUser, refreshUserProfile } from '../../common/auth-store.js';
 import { logoutUniIdAccount } from '../../common/auth-session.js';
-import { getAvatarDisplayImage } from '../../common/pet-avatar-generator.js';
+import { getAvatarDisplayImage, getProfilePetAvatar } from '../../common/pet-avatar-generator.js';
+import { isReduceMotionEnabled, lightHaptic } from '../../common/haptics.js';
 
 const UNI_ID_LOGIN_PAGE = '/uni_modules/uni-id-pages/pages/login/login-withpwd';
 
@@ -191,7 +192,9 @@ export default {
       authLoading: false,
       memoryCount: 0,
       eventCount: 0,
-      chatCount: 0
+      chatCount: 0,
+      activeAvatarFailed: false,
+      reduceMotion: isReduceMotionEnabled()
     };
   },
   computed: {
@@ -202,7 +205,7 @@ export default {
       return getRelationshipThemeClass(this.relationshipStage);
     },
     activePetAvatar() {
-      return getAvatarDisplayImage(this.activePet || {});
+      return this.activeAvatarFailed ? '/static/pet.png' : getProfilePetAvatar(this.activePet || {});
     },
     activeModeText() {
       return this.relationshipStage === 'deceased' ? '温柔纪念' : '正在陪伴';
@@ -274,6 +277,8 @@ export default {
       const activePet = getActivePet();
       this.activePet = activePet;
       this.activePetId = activePet ? activePet.id : null;
+      this.activeAvatarFailed = false;
+      this.reduceMotion = isReduceMotionEnabled();
       setRelationshipTabBar(activePet && activePet.status);
       this.calculateStats();
     },
@@ -364,7 +369,15 @@ export default {
       uni.navigateTo({ url: `/pages/insights/insights?type=${type}` });
     },
     openArchive() {
-      uni.navigateTo({ url: '/pages/archive/archive' });
+      if (!this.activePetId) return;
+      uni.navigateTo({ url: `/pages/archive/archive?petId=${encodeURIComponent(this.activePetId)}` });
+    },
+    openAvatarArchive() {
+      lightHaptic();
+      this.openArchive();
+    },
+    handleActiveAvatarError() {
+      this.activeAvatarFailed = true;
     },
     openMembership() {
       uni.showModal({
@@ -1210,5 +1223,13 @@ export default {
 
 .profile-page.theme-memorial .menu-icon {
   background: var(--pety-primary-soft, #E2E3EA);
+}
+
+.profile-scroll {
+  animation-duration: 360ms;
+}
+
+.reduce-motion .profile-scroll {
+  animation: none;
 }
 </style>

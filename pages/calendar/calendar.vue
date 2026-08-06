@@ -1,5 +1,5 @@
 <template>
-  <view :class="['calendar-page', themeClass]">
+  <view :class="['calendar-page', themeClass, reduceMotion ? 'reduce-motion' : '']">
     <view class="top-bar">
       <button class="icon-button" hover-class="icon-button-hover" @click="goBack">
         <uni-icons type="left" size="22" color="#302A23"></uni-icons>
@@ -28,11 +28,14 @@
 
     <view v-if="activePet" class="month-card">
       <view class="month-head">
-        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeWeek(-1)">
+        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeMonth(-1)">
           <uni-icons type="left" size="18" color="#6B5D4D"></uni-icons>
         </button>
-        <text class="month-title">{{ monthTitle }}</text>
-        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeWeek(1)">
+        <button class="month-title-button" hover-class="month-title-button-hover" @click="openMonthPicker">
+          <text class="month-title">{{ monthTitle }}</text>
+          <text class="month-title-hint">选择年月</text>
+        </button>
+        <button class="month-arrow" hover-class="month-arrow-hover" @click="changeMonth(1)">
           <uni-icons type="right" size="18" color="#6B5D4D"></uni-icons>
         </button>
       </view>
@@ -41,11 +44,16 @@
         <text v-for="weekday in weekDays" :key="weekday" class="week-label">{{ weekday }}</text>
       </view>
 
-      <view class="date-grid">
+      <view :class="['date-grid', monthTransitionClass]">
         <view
           v-for="item in calendarDays"
           :key="item.key"
-          :class="['date-cell', item.isToday ? 'date-cell-today' : '', item.dateKey === selectedDateKey ? 'date-cell-active' : '']"
+          :class="[
+            'date-cell',
+            item.isCurrentMonth ? '' : 'date-cell-muted',
+            item.isToday ? 'date-cell-today' : '',
+            item.dateKey === selectedDateKey ? 'date-cell-active' : ''
+          ]"
           @click="selectDate(item)"
         >
           <text class="date-number">{{ item.monthDayLabel }}</text>
@@ -114,6 +122,25 @@
         <text>{{ recordCopy.recordPrimaryActionText }}</text>
       </button>
     </view>
+
+    <view v-if="showMonthPicker" class="picker-mask" @click="closeMonthPicker">
+      <view class="picker-sheet" @click.stop>
+        <view class="picker-head">
+          <button class="picker-action" hover-class="picker-action-hover" @click="closeMonthPicker">取消</button>
+          <text class="picker-title">选择年月</text>
+          <button class="picker-action picker-action-strong" hover-class="picker-action-hover" @click="confirmMonthPicker">跳转</button>
+        </view>
+        <picker-view class="month-picker" :value="pickerValue" indicator-style="height: 48px;" @change="handlePickerChange">
+          <picker-view-column>
+            <view v-for="year in supportedYears" :key="year" class="picker-item">{{ year }} 年</view>
+          </picker-view-column>
+          <picker-view-column>
+            <view v-for="month in supportedMonths" :key="month" class="picker-item">{{ month }} 月</view>
+          </picker-view-column>
+        </picker-view>
+        <button class="picker-today" hover-class="picker-today-hover" @click="pickerGoToday">回到今天</button>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -123,12 +150,20 @@ import {
   formatDateKey,
   getDiaryMap,
   getDiaryRecord,
+  getEventLabel,
   getMoodColor,
   getMoodLabel,
   hasDiaryRecord,
   saveDiaryRecord
 } from '../../common/diary-store.js';
-import { formatLocalCalendarSummary, getLocalCalendarDate } from '../../common/lunar-calendar.js';
+import {
+  formatLocalCalendarSummary,
+  getLocalCalendarDate,
+  getLocalMonthGridDates,
+  LUNAR_SUPPORTED_SOLAR_YEAR_MAX,
+  LUNAR_SUPPORTED_SOLAR_YEAR_MIN
+} from '../../common/lunar-calendar.js';
+import { isReduceMotionEnabled, successHaptic } from '../../common/haptics.js';
 import {
   getPetRelationshipStage,
   getRelationshipConfig,
@@ -144,22 +179,25 @@ function parseLocalDateKey(dateKey) {
   return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
 }
 
-function getLocalWeekStart(dateValue) {
-  const date = new Date(dateValue);
-  date.setHours(12, 0, 0, 0);
-  const mondayOffset = (date.getDay() + 6) % 7;
-  date.setDate(date.getDate() - mondayOffset);
-  return date;
-}
-
 export default {
   data() {
     return {
       activePet: null,
       activePetId: null,
-      currentWeekDate: new Date(),
+      currentMonthDate: new Date(),
       selectedDateKey: formatDateKey(),
       diaryMap: {},
+      showMonthPicker: false,
+      pickerValue: [new Date().getFullYear() - LUNAR_SUPPORTED_SOLAR_YEAR_MIN, new Date().getMonth()],
+      supportedYears: Array.from(
+        { length: LUNAR_SUPPORTED_SOLAR_YEAR_MAX - LUNAR_SUPPORTED_SOLAR_YEAR_MIN + 1 },
+        (_, index) => LUNAR_SUPPORTED_SOLAR_YEAR_MIN + index
+      ),
+      supportedMonths: Array.from({ length: 12 }, (_, index) => index + 1),
+      monthTransitionClass: '',
+      monthTransitionLocked: false,
+      monthTransitionTimer: null,
+      reduceMotion: isReduceMotionEnabled(),
       weekDays: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
       moodOptions: [
         { key: 'good', label: '轻松' },
@@ -203,17 +241,7 @@ export default {
       return options.concat(legacyOptions);
     },
     monthTitle() {
-      const days = this.calendarDays;
-      if (!days.length) return '';
-      const first = days[0];
-      const last = days[days.length - 1];
-      if (first.year === last.year && first.month === last.month) {
-        return `${first.year} 年 ${first.month} 月`;
-      }
-      if (first.year === last.year) {
-        return `${first.year} 年 ${first.month} 月 - ${last.month} 月`;
-      }
-      return `${first.year} 年 ${first.month} 月 - ${last.year} 年 ${last.month} 月`;
+      return `${this.currentMonthDate.getFullYear()} 年 ${this.currentMonthDate.getMonth() + 1} 月`;
     },
     selectedDateLabel() {
       const parts = this.selectedDateKey.split('-').map(Number);
@@ -236,17 +264,13 @@ export default {
       return '你写下的小事，归爪会认真记住。之后整理照护记录、准备问诊或回看变化时，这些文字都会成为重要线索。';
     },
     calendarDays() {
-      const startDate = getLocalWeekStart(this.currentWeekDate);
+      const displayYear = this.currentMonthDate.getFullYear();
+      const displayMonth = this.currentMonthDate.getMonth() + 1;
       const todayKey = formatDateKey();
-      const days = [];
-
-      for (let index = 0; index < 7; index += 1) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + index);
+      return getLocalMonthGridDates(displayYear, displayMonth).map((date, index) => {
         const dateKey = formatDateKey(date);
         const calendarDate = getLocalCalendarDate(date);
-
-        days.push({
+        return {
           key: `${dateKey}_${index}`,
           dateKey,
           day: date.getDate(),
@@ -255,17 +279,30 @@ export default {
           weekdayShortLabel: calendarDate.weekdayShortLabel,
           monthDayLabel: calendarDate.monthDayLabel,
           lunarShortLabel: calendarDate.lunar ? calendarDate.lunar.shortLabel : '',
+          isCurrentMonth: calendarDate.year === displayYear && calendarDate.month === displayMonth,
           isToday: dateKey === todayKey,
           hasRecord: this.hasRecord(dateKey),
           moodColor: this.moodColor(this.diaryMap[dateKey] && this.diaryMap[dateKey].mood)
-        });
-      }
-
-      return days;
+        };
+      });
+    }
+  },
+  onLoad(options = {}) {
+    const requestedDate = options.selectedDate || options.date;
+    if (requestedDate) {
+      const routeDate = parseLocalDateKey(requestedDate);
+      this.selectedDateKey = formatDateKey(routeDate);
+      this.currentMonthDate = new Date(routeDate.getFullYear(), routeDate.getMonth(), 1, 12, 0, 0, 0);
     }
   },
   onShow() {
     this.loadCalendar();
+  },
+  onHide() {
+    this.clearMonthTransition();
+  },
+  onUnload() {
+    this.clearMonthTransition();
   },
   methods: {
     loadCalendar() {
@@ -273,6 +310,7 @@ export default {
       this.activePet = activePet;
       this.activePetId = activePet ? activePet.id : null;
       this.diaryMap = this.activePetId ? getDiaryMap(this.activePetId) : {};
+      this.reduceMotion = isReduceMotionEnabled();
       this.loadSelectedRecord();
     },
     loadSelectedRecord() {
@@ -301,21 +339,84 @@ export default {
     },
     selectDate(item) {
       this.selectedDateKey = item.dateKey;
-      this.currentWeekDate = parseLocalDateKey(item.dateKey);
+      if (!item.isCurrentMonth) {
+        this.currentMonthDate = new Date(item.year, item.month - 1, 1, 12, 0, 0, 0);
+      }
       this.loadSelectedRecord();
     },
-    changeWeek(step) {
-      const nextDate = parseLocalDateKey(this.selectedDateKey);
-      nextDate.setDate(nextDate.getDate() + (step * 7));
-      this.currentWeekDate = nextDate;
-      this.selectedDateKey = formatDateKey(nextDate);
-      this.loadSelectedRecord();
+    changeMonth(step) {
+      if (this.monthTransitionLocked) return;
+      this.monthTransitionLocked = true;
+      const next = new Date(
+        this.currentMonthDate.getFullYear(),
+        this.currentMonthDate.getMonth() + step,
+        1,
+        12,
+        0,
+        0,
+        0
+      );
+      if (
+        next.getFullYear() < LUNAR_SUPPORTED_SOLAR_YEAR_MIN ||
+        next.getFullYear() > LUNAR_SUPPORTED_SOLAR_YEAR_MAX
+      ) {
+        this.monthTransitionLocked = false;
+        uni.showToast({ title: `可查看 ${LUNAR_SUPPORTED_SOLAR_YEAR_MIN}-${LUNAR_SUPPORTED_SOLAR_YEAR_MAX} 年`, icon: 'none' });
+        return;
+      }
+      this.monthTransitionClass = this.reduceMotion ? '' : (step > 0 ? 'month-slide-left' : 'month-slide-right');
+      this.currentMonthDate = next;
+      if (this.monthTransitionTimer) clearTimeout(this.monthTransitionTimer);
+      this.monthTransitionTimer = setTimeout(() => {
+        this.monthTransitionTimer = null;
+        this.monthTransitionClass = '';
+        this.monthTransitionLocked = false;
+      }, this.reduceMotion ? 80 : 240);
     },
     goToday() {
       const today = new Date();
-      this.currentWeekDate = today;
+      this.currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1, 12, 0, 0, 0);
       this.selectedDateKey = formatDateKey(today);
       this.loadSelectedRecord();
+    },
+    openMonthPicker() {
+      this.pickerValue = [
+        Math.max(0, Math.min(
+          this.supportedYears.length - 1,
+          this.currentMonthDate.getFullYear() - LUNAR_SUPPORTED_SOLAR_YEAR_MIN
+        )),
+        this.currentMonthDate.getMonth()
+      ];
+      this.showMonthPicker = true;
+    },
+    closeMonthPicker() {
+      this.showMonthPicker = false;
+    },
+    handlePickerChange(event) {
+      this.pickerValue = event.detail.value;
+    },
+    confirmMonthPicker() {
+      const year = this.supportedYears[this.pickerValue[0]];
+      const month = this.supportedMonths[this.pickerValue[1]];
+      if (!year || !month) return;
+      this.currentMonthDate = new Date(year, month - 1, 1, 12, 0, 0, 0);
+      this.selectedDateKey = formatDateKey(this.currentMonthDate);
+      this.loadSelectedRecord();
+      this.showMonthPicker = false;
+      successHaptic();
+    },
+    pickerGoToday() {
+      this.showMonthPicker = false;
+      this.goToday();
+      successHaptic();
+    },
+    clearMonthTransition() {
+      if (this.monthTransitionTimer) {
+        clearTimeout(this.monthTransitionTimer);
+        this.monthTransitionTimer = null;
+      }
+      this.monthTransitionClass = '';
+      this.monthTransitionLocked = false;
     },
     isEventSelected(key) {
       return this.form.type === key || this.form.events.includes(key);
@@ -336,6 +437,7 @@ export default {
 
       saveDiaryRecord(this.activePetId, this.selectedDateKey, this.form);
       this.diaryMap = getDiaryMap(this.activePetId);
+      successHaptic();
       uni.showToast({ title: '已保存', icon: 'success' });
     },
     goBack() {
@@ -725,7 +827,7 @@ export default {
   --ui-accent: var(--pety-primary, #6D5945);
   --ui-soft: var(--pety-primary-soft, #EAE1D6);
   background: var(--pety-page-bg, #F5F2EC);
-  animation: calendarFadeUp 520ms ease both;
+  animation: calendarFadeUp 360ms ease both;
 }
 
 .calendar-page.theme-memorial {
@@ -845,5 +947,171 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.month-title-button {
+  min-width: 210rpx;
+  padding: 4rpx 18rpx;
+  margin: 0;
+  background: transparent;
+  text-align: center;
+}
+
+.month-title-button::after,
+.picker-action::after,
+.picker-today::after {
+  border: none;
+}
+
+.month-title,
+.month-title-hint {
+  display: block;
+}
+
+.month-title-hint {
+  margin-top: 4rpx;
+  color: var(--ui-muted);
+  font-size: 18rpx;
+}
+
+.month-title-button-hover {
+  opacity: 0.72;
+}
+
+.date-grid {
+  flex-wrap: wrap;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.date-cell {
+  height: 100rpx;
+}
+
+.date-cell-muted {
+  opacity: 0.42;
+}
+
+.month-slide-left {
+  animation: monthSlideLeft 230ms ease both;
+}
+
+.month-slide-right {
+  animation: monthSlideRight 230ms ease both;
+}
+
+.picker-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(37, 34, 31, 0.34);
+  animation: pickerMaskIn 220ms ease both;
+}
+
+.picker-sheet {
+  width: 100%;
+  padding: 24rpx 28rpx calc(30rpx + env(safe-area-inset-bottom));
+  border-radius: 32rpx 32rpx 0 0;
+  background: var(--ui-card);
+  box-sizing: border-box;
+  animation: pickerSheetIn 260ms ease both;
+}
+
+.picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker-title {
+  color: var(--ui-text);
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.picker-action {
+  min-width: 96rpx;
+  height: 72rpx;
+  padding: 0 12rpx;
+  margin: 0;
+  background: transparent;
+  color: var(--ui-muted);
+  font-size: 25rpx;
+  line-height: 72rpx;
+}
+
+.picker-action-strong {
+  color: var(--ui-accent);
+  font-weight: 600;
+}
+
+.picker-action-hover,
+.picker-today-hover {
+  opacity: 0.68;
+}
+
+.month-picker {
+  width: 100%;
+  height: 360rpx;
+  margin-top: 8rpx;
+}
+
+.picker-item {
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ui-text);
+  font-size: 30rpx;
+}
+
+.picker-today {
+  width: 100%;
+  height: 80rpx;
+  margin: 4rpx 0 0;
+  border-radius: 18rpx;
+  background: var(--ui-soft);
+  color: var(--ui-accent);
+  font-size: 26rpx;
+  line-height: 80rpx;
+}
+
+@keyframes monthSlideLeft {
+  from { opacity: 0.35; transform: translateX(16rpx); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes monthSlideRight {
+  from { opacity: 0.35; transform: translateX(-16rpx); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pickerMaskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pickerSheetIn {
+  from { opacity: 0; transform: translateY(24rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-page,
+  .month-slide-left,
+  .month-slide-right,
+  .picker-mask,
+  .picker-sheet {
+    animation: none;
+  }
+}
+
+.reduce-motion.calendar-page,
+.reduce-motion .month-slide-left,
+.reduce-motion .month-slide-right,
+.reduce-motion .picker-mask,
+.reduce-motion .picker-sheet {
+  animation: none;
 }
 </style>

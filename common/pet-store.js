@@ -80,6 +80,7 @@ function normalizePet(rawPet = {}) {
     avatarSource: resolveAvatarSource(rawPet, originalPhotoUrl, generatedAvatarUrl),
     originalPhotoUrl,
     generatedAvatarUrl,
+    generatedAvatar: rawPet.generatedAvatar || '',
     avatarStyle: normalizeAvatarStyle(rawPet.avatarStyle || getDefaultAvatarStyle(relationshipStage), relationshipStage),
     avatarStatus: normalizeAvatarStatus(rawPet.avatarStatus || (generatedAvatarUrl ? 'ready' : 'none')),
     avatarUpdatedAt: rawPet.avatarUpdatedAt || (generatedAvatarUrl ? (rawPet.updatedAt || createdAt) : 0),
@@ -131,6 +132,7 @@ function removePetData(petId) {
   uni.removeStorageSync(`chat_history_${petId}`);
   uni.removeStorageSync(`pet_profile_${petId}`);
   uni.removeStorageSync(`consultation_records_${petId}`);
+  uni.removeStorageSync(`memorial_persona_${petId}`);
 }
 
 export function isPlusMember() {

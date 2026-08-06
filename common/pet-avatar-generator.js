@@ -134,3 +134,19 @@ export function getAvatarDisplayImage(pet = {}) {
     source.petPhoto ||
     PLACEHOLDER_IMAGE;
 }
+
+export function getProfilePetAvatar(pet = {}) {
+  const source = pet || {};
+  return source.generatedAvatarUrl ||
+    source.generatedAvatar ||
+    source.avatar ||
+    source.originalPhotoUrl ||
+    source.avatarUrl ||
+    source.imageUrl ||
+    source.image ||
+    source.photo ||
+    source.petImage ||
+    source.profileImage ||
+    source.petPhoto ||
+    PLACEHOLDER_IMAGE;
+}

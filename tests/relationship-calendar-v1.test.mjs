@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import {
   formatLocalCalendarSummary,
   getLunarDateInfo,
-  getLocalCalendarDate
+  getLocalCalendarDate,
+  getLocalMonthGridDates,
+  getLocalWeekDates,
+  LUNAR_SUPPORTED_SOLAR_YEAR_MAX,
+  LUNAR_SUPPORTED_SOLAR_YEAR_MIN
 } from '../common/lunar-calendar.js';
 import {
   getCurrentAssistantOwnerCall,
@@ -38,6 +42,23 @@ assert.equal(
   formatLocalCalendarSummary(2024, 7, 24),
   '星期三 · 7月24日 · 农历六月十九'
 );
+
+const weekAcrossYear = getLocalWeekDates(new Date(2025, 0, 1, 12, 0, 0));
+assert.equal(weekAcrossYear.length, 7);
+assert.equal(`${weekAcrossYear[0].getFullYear()}-${weekAcrossYear[0].getMonth() + 1}-${weekAcrossYear[0].getDate()}`, '2024-12-30');
+assert.equal(`${weekAcrossYear[6].getFullYear()}-${weekAcrossYear[6].getMonth() + 1}-${weekAcrossYear[6].getDate()}`, '2025-1-5');
+
+const februaryGrid = getLocalMonthGridDates(2026, 2);
+assert.equal(februaryGrid.length, 35);
+assert.equal(februaryGrid[0].getDay(), 1);
+assert.equal(februaryGrid[34].getDay(), 0);
+
+const sixWeekGrid = getLocalMonthGridDates(2026, 8);
+assert.equal(sixWeekGrid.length, 42);
+assert.equal(`${sixWeekGrid[0].getFullYear()}-${sixWeekGrid[0].getMonth() + 1}-${sixWeekGrid[0].getDate()}`, '2026-7-27');
+assert.equal(`${sixWeekGrid[41].getFullYear()}-${sixWeekGrid[41].getMonth() + 1}-${sixWeekGrid[41].getDate()}`, '2026-9-6');
+assert.equal(LUNAR_SUPPORTED_SOLAR_YEAR_MIN, 1901);
+assert.equal(LUNAR_SUPPORTED_SOLAR_YEAR_MAX, 2100);
 
 assert.deepEqual(
   normalizeOwnerRelation({ ownerCallType: 'mother', ownerPreferredCall: '妈妈' }),
