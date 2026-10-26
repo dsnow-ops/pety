@@ -1,0 +1,23 @@
+'use strict';
+// Read-only app metadata. Does not touch account storage, logs, OTP or other apps.
+const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),crypto=require('node:crypto');
+const adb='D:/HBuilderX/plugins/launcher-tools/tools/adbs/adb.exe';
+const call=(...args)=>cp.execFileSync(adb,args,{encoding:'utf8',maxBuffer:2e6,stdio:['ignore','pipe','ignore'],timeout:15000});
+const root=process.cwd(),evidence=path.join(root,'unpackage/release-sprint-20261010');
+const local=JSON.parse(fs.readFileSync(path.join(evidence,'build/app/manifest.json'),'utf8'));
+const remote=JSON.parse(call('shell','cat','/sdcard/Android/data/io.dcloud.HBuilder/apps/HBuilder/www/manifest.json'));
+const installed=call('shell','dumpsys','package','io.dcloud.HBuilder');
+const service=fs.readFileSync(path.join(evidence,'build/app/app-service.js'));
+const phoneHash=call('shell','sha256sum','/sdcard/Android/data/io.dcloud.HBuilder/apps/HBuilder/www/app-service.js').split(/\s+/)[0];
+const permissions=[...new Set(installed.match(/android\.permission\.[A-Z_]+/g)||[])].sort();
+const manifest=require('D:/HBuilderX/plugins/uniapp-cli-vite/node_modules/json5').parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
+const configured=(manifest['app-plus']?.distribute?.android?.permissions||[]).map(s=>s.match(/android\.permission\.[A-Z_]+/)?.[0]).filter(Boolean);
+const expectedSha=crypto.createHash('sha256').update(service).digest('hex');
+const devPath=path.join(root,'unpackage/dist/dev/app-plus/app-service.js');
+const devBytes=fs.existsSync(devPath)?fs.readFileSync(devPath):null;
+const devSha=devBytes?crypto.createHash('sha256').update(devBytes).digest('hex'):null;
+const devMarkers=Object.fromEntries(['issueImageUpload','completeImageUpload','请改用 JPG 或 PNG 图片','旧图片需重新选择，文字草稿已保留'].map(marker=>[marker,Boolean(devBytes&&devBytes.toString('utf8').includes(marker))]));
+const report={createdAt:new Date().toISOString(),readOnly:true,model:call('shell','getprop','ro.product.model').trim(),installedPackage:'io.dcloud.HBuilder',versionName:installed.match(/versionName=([^\s]+)/)?.[1]||null,versionCode:installed.match(/versionCode=(\d+)/)?.[1]||null,debuggable:/\bDEBUGGABLE\b/.test(installed),phoneResourceAppId:remote.id||remote.appid||null,buildResourceAppId:local.id||local.appid||null,appIdMatches:(remote.id||remote.appid)===(local.id||local.appid),phoneServiceSha256:phoneHash,buildServiceSha256:expectedSha,manualBuildResourcesInstalled:phoneHash===expectedSha,configuredAndroidPermissions:configured,installedBasePermissions:permissions,removedFromProductManifestStillInBase:['READ_LOGS','GET_ACCOUNTS','MOUNT_UNMOUNT_FILESYSTEMS','WRITE_SETTINGS'].filter(s=>permissions.includes('android.permission.'+s)),nextAction:'新资源未关联云空间；当前手机真实账号不是获授权的隔离测试身份。先取得测试环境/身份并构建关联资源，再备份自己的App代码、非破坏性同步；不以替换未配置资源来冒充真机链路通过。',limits:'Standard base package metadata only. It does not prove final release APK permissions/signature or effective user grants. No app resources replaced.'};
+Object.assign(report,{entryPhoneServiceSha256:'b3bc96880d038141f49fded9a58f710871f844f2ecf03d4dcd09a0b764fa9980',changedFromEntryBaseline:phoneHash!=='b3bc96880d038141f49fded9a58f710871f844f2ecf03d4dcd09a0b764fa9980',hbuilderDevServiceSha256:devSha,hbuilderDevMatchesPhone:phoneHash===devSha,hbuilderDevLastWriteUtc:devBytes?fs.statSync(devPath).mtime.toISOString():null,devClientMarkers:devMarkers,limits:'Standard base metadata only. Resource bytes now match the current HBuilderX dev output if hbuilderDevMatchesPhone=true; they are compared separately from the manual production resource build. This does not prove all source is current, that memory reloaded these bytes, cloud deployment, final release permissions/signature, or effective user grants. This script replaces no app resources.',nextAction:'手机仍为标准开发基座。先核实当前开发资源运行版本；真实账号并非授权隔离测试身份。云用途/后端版本/测试号码仍不明，不能测试付费或破坏性路径，也不能用手工未关联资源覆盖当前版本。'});
+const output=path.join(evidence,'phone-readiness.json');fs.writeFileSync(output,JSON.stringify(report,null,2));
+console.log(JSON.stringify({output,model:report.model,appIdMatches:report.appIdMatches,manualBuildResourcesInstalled:report.manualBuildResourcesInstalled,hbuilderDevMatchesPhone:report.hbuilderDevMatchesPhone,changedFromEntryBaseline:report.changedFromEntryBaseline,devClientMarkers:report.devClientMarkers,debuggable:report.debuggable,removedFromProductManifestStillInBase:report.removedFromProductManifestStillInBase}));

@@ -1,0 +1,11 @@
+{
+  "name": "submit_product_feedback",
+  "dependencies": { "pety-auth": "file:../common/pety-auth" },
+  "extensions": {
+    "uni-cloud-jql": {}
+  },
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 45
+  }
+}

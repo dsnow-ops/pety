@@ -1,0 +1,32 @@
+{
+  "bsonType": "object",
+  "required": ["identityHash", "petHash", "queryHash", "query", "responseLanguage", "status", "providerInvocationCount", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "description": "由云函数生成的相似案例搜索任务 ID" },
+    "identityHash": { "bsonType": "string" },
+    "petHash": { "bsonType": "string" },
+    "queryHash": { "bsonType": "string" },
+    "query": { "bsonType": "string", "maxLength": 1200 },
+    "responseLanguage": { "bsonType": "string", "enum": ["zh-Hans", "en"] },
+    "status": { "bsonType": "string", "enum": ["PENDING", "RUNNING", "SUCCEEDED", "SUCCEEDED_PARTIAL", "FAILED", "TIMEOUT"] },
+    "providerInvocationCount": { "bsonType": "int", "minimum": 0, "maximum": 1 },
+    "rateLimitAuthorized": { "bsonType": "bool" },
+    "result": { "bsonType": "object" },
+    "providerRequestId": { "bsonType": "string" },
+    "webSearchExecuted": { "bsonType": "bool" },
+    "linkCount": { "bsonType": "int", "minimum": 0 },
+    "normalizedCaseCount": { "bsonType": "int", "minimum": 0 },
+    "errorCode": { "bsonType": "string" },
+    "startedAt": { "bsonType": "long" },
+    "completedAt": { "bsonType": "long" },
+    "expiresAt": { "bsonType": "long" },
+    "createdAt": { "bsonType": "long" },
+    "updatedAt": { "bsonType": "long" }
+  }
+}

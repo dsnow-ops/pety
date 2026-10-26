@@ -1,0 +1,14 @@
+{
+  "bsonType": "object",
+  "required": ["userId", "version", "periods", "legacyUntil", "updatedAt"],
+  "permission": {"read": false, "create": false, "update": false, "delete": false},
+  "properties": {
+    "_id": {"bsonType": "string"},
+    "userId": {"bsonType": "string"},
+    "version": {"bsonType": "int"},
+    "periods": {"bsonType": "object"},
+    "revocations": {"bsonType": "object"},
+    "legacyUntil": {"bsonType": "long"},
+    "updatedAt": {"bsonType": "long"}
+  }
+}

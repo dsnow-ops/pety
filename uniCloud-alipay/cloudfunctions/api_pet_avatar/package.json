@@ -1,0 +1,16 @@
+{
+  "name": "api_pet_avatar",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "pety-auth": "file:../common/pety-auth",
+    "@alicloud/pop-core": "^1.8.0",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0",
+    "pety-membership-orders": "file:../common/pety-membership-orders"
+  },
+  "cloudfunction-config": {
+    "memorySize": 512,
+    "timeout": 120
+  }
+}

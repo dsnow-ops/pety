@@ -1,0 +1,13 @@
+{
+  "bsonType": "object",
+  "required": ["cursor", "version", "leaseOwner", "leaseUntil", "updatedAt"],
+  "permission": {"read": false, "create": false, "update": false, "delete": false},
+  "properties": {
+    "_id": {"bsonType": "string"},
+    "cursor": {"bsonType": "string"},
+    "version": {"bsonType": "long"},
+    "leaseOwner": {"bsonType": "string"},
+    "leaseUntil": {"bsonType": "long"},
+    "updatedAt": {"bsonType": "long"}
+  }
+}

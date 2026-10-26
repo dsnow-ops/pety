@@ -1,0 +1,25 @@
+{
+	"pages": [
+		{
+			"path": "uni_modules/uni-pay/pages/success/success",
+			"style": {
+				"navigationBarTitleText": "支付成功",
+				"backgroundColor": "#F8F8F8"
+			}
+		},
+		{
+			"path": "uni_modules/uni-pay/pages/ad-interactive-webview/ad-interactive-webview",
+			"style": {
+				"navigationBarTitleText": "ad",
+				"backgroundColor": "#F8F8F8"
+			}
+		},
+		{
+			"path": "uni_modules/uni-pay/pages/pay-desk/pay-desk",
+			"style": {
+				"navigationBarTitleText": "收银台",
+				"backgroundColor": "#F8F8F8"
+			}
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+  "deepseek": {
+    "provider": "deepseek",
+    "apiKey": "YOUR_DEEPSEEK_API_KEY_HERE",
+    "baseUrl": "https://api.deepseek.com",
+    "model": "deepseek-v4-flash",
+    "visionEnabled": false,
+    "visionModel": "deepseek-flash",
+    "visionMaxTokens": 1800,
+    "visionRequestTimeoutMs": 40000,
+    "thinking": {
+      "type": "disabled"
+    },
+    "temperature": 0.7,
+    "maxTokens": 500,
+    "requestTimeoutMs": 15000,
+    "similarCaseSearchTimeoutMs": 90000
+  },
+  "security": {
+    "maxUserMessageChars": 600
+  },
+  "rateLimit": {
+    "enabled": true,
+    "freeDailyLimit": 10,
+    "plusMonthlyLimit": 300,
+    "membershipLookupEnabled": false,
+    "collection": "deepseek_rate_limits",
+    "membershipCollection": "pety_memberships"
+  }
+}

@@ -1,0 +1,32 @@
+
+/* EXPLICIT VISUAL LOCK, 2026-09-29. Source of direction: the user's approved screenshot.
+   Browser reference only. Merge into production tokens/components, NOT as blanket overrides.
+   Paper/photo/canvas colors remain independent from the dark app chrome. */
+:root{color-scheme:only dark;--bg:#25241e;--ink:#dce7e0;--sub:#c0c2b5;--muted:#a5aa98;--accent:#59684f;--edge:rgba(216,223,198,.13);--surface:#2e2e25;--shadow:0 14px 35px rgba(17,17,11,.14)}
+body{background:#35312a;color:var(--ink)}
+.intro .eyebrow,.label,.note,.reference-legend{color:#b6b8a6}
+.intro p{color:#c1c2b3}.intro h1{color:#dce7e0}
+.screen{background:#25241e;border-color:rgba(216,223,198,.10);box-shadow:0 28px 65px rgba(13,13,8,.12)}
+.home-scroll{background:linear-gradient(180deg,#b3a594 0px,#c2b7a8 335px,#514b3d 555px,#2c2a23 700px,#24231d 900px)}
+.status,.brandline{color:#f2f4ea}
+.hero-copy h2{color:#f5f4e9;text-shadow:0 1px 8px rgba(26,28,20,.22)}
+.hero{height:450px} /* Reserve room above the fixed demo tab bar; do not crop the pet. */
+/* Small labels in the approved screenshot were low contrast: improve readability without changing layout. */
+.hero-copy .hello,.hero-copy .relation{color:#383b31}
+.daily-panel{background:linear-gradient(145deg,rgba(44,43,35,.97),rgba(35,36,28,.97));border-color:rgba(217,220,196,.17);box-shadow:0 14px 35px rgba(15,16,10,.12)}
+.daily-top{color:#bdc1b0}.daily-panel h3{color:#e2e9dd}
+.btn{background:#292b22;color:#dfe7d8;border-color:rgba(213,222,193,.12);line-height:22px;padding:0 14px;min-height:48px;margin:0;box-sizing:border-box}
+.btn.primary{background:linear-gradient(145deg,#647456,#4c5b43);border-color:rgba(235,243,217,.06);color:#f7f9ef}
+.btn svg{width:20px;height:20px}.day .dow,.day .lunar{color:#a6ad99}.day .num{color:#e0e8d9}.day.active{background:#59664f}.day.active .dow,.day.active .lunar{color:#eff2e4}
+.quiet,.prompt{color:#bbc5aa}.cover-card{background:#2c2d24;border:1px solid var(--edge);box-shadow:none}.text-cover{background:#37382d;color:#d7dfc9}.cover-card p{color:#a8b19a}
+.home-tabs{background:rgba(31,32,25,.95);border-color:rgba(209,218,189,.12);color:#a4ac97}
+.tab{color:#a5ad98}.tab.active{color:#d0dcbd}.sticky{background:rgba(46,45,36,.92);color:#e2e8d9}
+.studio{background:linear-gradient(145deg,#363228,#24231d 75%)}.studio-head button:last-child{color:#bcc6ad}
+.paper{color-scheme:only light;box-shadow:0 13px 28px rgba(10,11,6,.22)}
+.hint,.control-top,.range-row,.style-row .undo,.tools .tool,.control-top button{color:#adb79d}
+.tool.active{color:#d6e1c6;border-color:#869575}.segments{background:#24261e;border-color:rgba(215,223,195,.1)}
+.segment{color:#b7c1a7}.segment.active{background:#59664f;color:#f2f5e9}.style-chip{background:#292b22;color:#cbd4bd}.style-chip.active{background:#44352c;color:#edc9a7;border-color:#956a51}
+.studio-footer{background:rgba(36,36,29,.97)}.studio-footer .btn{height:48px;min-height:48px;font-size:14px}
+.statebox{background:#2c2e24;color:#c6ceb8}.toast{background:#3a4831;color:#f4f8ea}
+.reference-legend{border-color:var(--edge)}
+@media(max-width:799px){.phone-switch button{background:#292b23;color:#c9d2bd}.phone-switch button.active{background:#59684f;color:#f2f6e9}}

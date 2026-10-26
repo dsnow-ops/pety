@@ -1,0 +1,13 @@
+{
+  "bsonType": "object",
+  "required": ["count", "version"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "count": { "bsonType": "int" },
+    "version": { "bsonType": "int" },
+    "nextAt": { "bsonType": "long" },
+    "updatedAt": { "bsonType": "long" },
+    "expiresAt": { "bsonType": "long" }
+  }
+}

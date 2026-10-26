@@ -1,0 +1,10 @@
+{
+  "name": "pety-auth",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "pngjs": "7.0.0",
+    "jpeg-js": "0.4.4",
+    "uni-id-common": "file:../../../../uni_modules/uni-id-common/uniCloud/cloudfunctions/common/uni-id-common"
+  }
+}

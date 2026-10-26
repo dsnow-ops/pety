@@ -1,0 +1,61 @@
+/* Reference component contracts for Vue3 uni-app App-vue / H5.
+ * Not a drop-in patch for an unseen repository: merge into the existing AppButton,
+ * AppSegmented, AppSurface, AppSettingsRow implementations. No business state here.
+ * px are logical CSS pixels, not physical screenshot pixels. No global button reset.
+ */
+.gz-visual-lock {
+  --gz-bg:#25241e; --gz-surface:#2e2e25; --gz-field:#24261f;
+  --gz-text:#e2e8dc; --gz-secondary:#bcc4ae; --gz-muted:#a6b095;
+  --gz-rule:rgba(221,228,202,.14); --gz-accent:#59684f; --gz-paper:#fcf9f1;
+  color:var(--gz-text); background-color:var(--gz-bg);
+  font-family:-apple-system,BlinkMacSystemFont,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.5;
+}
+.gz-visual-lock .gz-panel { box-sizing:border-box; padding:20px; border-radius:24px; border:1px solid var(--gz-rule); background:linear-gradient(145deg,#303027,#27291f); }
+.gz-visual-lock .gz-group { box-sizing:border-box; padding:16px; border-radius:16px; border:1px solid var(--gz-rule); background:var(--gz-surface); }
+.gz-visual-lock .gz-actions { display:flex; align-items:center; column-gap:10px; }
+.gz-visual-lock .gz-actions > .gz-btn { flex:1 1 0; min-width:0; }
+.gz-visual-lock .gz-btn {
+  box-sizing:border-box; display:flex; align-items:center; justify-content:center;
+  height:48px; min-height:48px; padding:0 14px; margin:0;
+  font-size:15px; line-height:22px; font-weight:500; text-align:center;
+  border:1px solid var(--gz-rule); border-radius:14px;
+  background:#292b22; color:var(--gz-text); white-space:nowrap;
+}
+.gz-visual-lock .gz-btn::after { border:0; }
+.gz-visual-lock .gz-btn--primary { background:linear-gradient(145deg,#647456,#4c5b43); color:#f7f9ef; border-color:rgba(235,243,217,.06); box-shadow:inset 0 1px 0 rgba(247,250,231,.10); }
+.gz-visual-lock .gz-btn--wide { width:100%; }
+.gz-visual-lock .gz-icon { width:20px; height:20px; flex:none; margin-right:8px; }
+.gz-visual-lock .gz-label { display:block; min-width:0; line-height:22px; }
+.gz-visual-lock .gz-btn[disabled],.gz-visual-lock .gz-btn--disabled { color:#8f9783; background:#303329; border-color:transparent; box-shadow:none; }
+.gz-visual-lock .gz-btn:focus-visible { outline:2px solid #c5d3ac; outline-offset:3px; }
+/* Large text mode is an explicit accessibility exception, not a global squeeze. */
+.gz-visual-lock.gz-large-text .gz-btn { height:auto; min-height:56px; padding:12px 14px; white-space:normal; }
+.gz-visual-lock .gz-segmented { box-sizing:border-box; display:flex; padding:4px; height:44px; border-radius:14px; background:var(--gz-field); box-shadow:inset 0 0 0 1px var(--gz-rule); }
+.gz-visual-lock .gz-segment-hit { box-sizing:border-box; flex:1 1 0; min-width:0; display:flex; align-items:center; justify-content:center; height:44px; margin:-4px 0; padding:4px 0; border:0; background:transparent; border-radius:10px; }
+.gz-visual-lock .gz-segment-hit::after { border:0; }
+.gz-visual-lock .gz-segment-face { width:100%; height:36px; display:flex; align-items:center; justify-content:center; font-size:14px; line-height:20px; font-weight:500; color:var(--gz-secondary); border-radius:10px; box-sizing:border-box; }
+.gz-visual-lock .gz-segment-hit.is-selected .gz-segment-face { background:var(--gz-accent); color:#f1f6e6; }
+/* Event choices: 3 equal columns x 4 rows for the existing 12 categories. */
+.gz-visual-lock .gz-event-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px 8px; align-items:start; }
+.gz-visual-lock .gz-mood-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.gz-visual-lock .gz-choice-hit { box-sizing:border-box; display:flex; align-items:center; justify-content:center; margin:0; padding:3px 0; width:100%; height:44px; min-height:44px; background:transparent; border:0; border-radius:10px; }
+.gz-visual-lock .gz-choice-hit::after { border:0; }
+.gz-visual-lock .gz-choice-face { box-sizing:border-box; display:flex; align-items:center; justify-content:center; width:100%; height:38px; min-height:38px; padding:0 8px; font-size:14px; font-weight:400; line-height:20px; border-radius:10px; border:1px solid var(--gz-rule); background:#303229; color:var(--gz-secondary); white-space:nowrap; }
+.gz-visual-lock .gz-choice-hit.is-selected .gz-choice-face { color:#f2f7e8; background:#506146; border-color:#879a71; }
+.gz-visual-lock .gz-mood-grid .gz-choice-face { font-size:13px; padding:0 4px; }
+.gz-visual-lock.gz-large-text .gz-event-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.gz-visual-lock.gz-large-text .gz-choice-hit,.gz-visual-lock.gz-large-text .gz-choice-face { height:auto; min-height:48px; white-space:normal; padding:6px; }
+.gz-visual-lock .gz-week { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; }
+.gz-visual-lock .gz-day { box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; height:74px; min-height:74px; width:100%; margin:0; padding:0; border:0; border-radius:16px; background:transparent; color:var(--gz-text); }
+.gz-visual-lock .gz-day::after { border:0; }
+.gz-visual-lock .gz-day.is-selected { background:var(--gz-accent); }
+.gz-visual-lock .gz-day-small { font-size:11px; line-height:14px; color:var(--gz-secondary); }
+.gz-visual-lock .gz-day-number { font-size:20px; line-height:22px; }
+.gz-visual-lock .gz-day.is-selected .gz-day-small { color:#edf2e2; }
+.gz-visual-lock .gz-settings-row { box-sizing:border-box; display:flex; align-items:center; gap:12px; width:100%; min-height:64px; padding:14px 16px; margin:0; border:0; border-bottom:1px solid var(--gz-rule); border-radius:0; background:transparent; color:var(--gz-text); font-size:15px; line-height:22px; text-align:left; }
+.gz-visual-lock .gz-settings-row::after { border:0; }
+.gz-visual-lock .gz-row-copy { flex:1 1 0; min-width:0; }
+.gz-visual-lock .gz-row-sub { display:block; font-size:12px; line-height:18px; color:var(--gz-secondary); margin-top:3px; }
+.gz-visual-lock .gz-row-chevron { flex:none; width:16px; height:16px; color:var(--gz-secondary); }
+.gz-visual-lock .gz-field { box-sizing:border-box; width:100%; min-height:120px; padding:14px; background:var(--gz-field); color:var(--gz-text); border:1px solid var(--gz-rule); border-radius:14px; font-size:16px; line-height:26px; }

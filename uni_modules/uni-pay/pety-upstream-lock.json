@@ -1,0 +1,194 @@
+{
+  "version": "2.4.2",
+  "repository": "https://gitcode.com/dcloud/uni-pay.git",
+  "files": [
+    {
+      "path": "changelog.md",
+      "sha256": "f61cda2dcfa371c290afe12f3f48d450ffab57220ae212a9720cb3e6e81b1b96"
+    },
+    {
+      "path": "components/uni-pay/uni-pay.vue",
+      "sha256": "ca908f7ebceba542d24a66aec5cb9fa83485b91c694206a8a27a5f1c247637ba"
+    },
+    {
+      "path": "js_sdk/appleiap.js",
+      "sha256": "2e2eac340d87487ee61fcac2986fb6c1a89bece62ee8169e3629854437ea7c43"
+    },
+    {
+      "path": "js_sdk/js_sdk.js",
+      "sha256": "5819e5991100595f40ecced7fea27af421157277fa94d3d20cfb9520e41794d1"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e13fa772075b2a795ec1771faf31dd16866afeac1d52729685fc0c63f0a5d44f"
+    },
+    {
+      "path": "pages/ad-interactive-webview/ad-interactive-webview.vue",
+      "sha256": "6bdaab51f17769d2317e27273a34005db145f8bf7f84bf6b51860cc7ae523358"
+    },
+    {
+      "path": "pages/pay-desk/pay-desk.vue",
+      "sha256": "752d951c83c2d453be34289f35c893cb74ab22d1af07f4cd47c806a237243d31"
+    },
+    {
+      "path": "pages/success/success.vue",
+      "sha256": "42afaded882edcd10c938eea70597e206d52a298a69d3aca34078f88a7fdaf5b"
+    },
+    {
+      "path": "pages_init.json",
+      "sha256": "55375b9a8749fa428d0b29c58ec74a1643e248a4be7f09bf5557945baa62e8e7"
+    },
+    {
+      "path": "readme.md",
+      "sha256": "407867227cf0ee056e3000aa065c9785080b02761dde60d3bea2003f9849fa6c"
+    },
+    {
+      "path": "static/alipay.png",
+      "sha256": "0ce49cafef19ced145d00ba7073a5752f23cd4e22d55989f3fa713f39850e261"
+    },
+    {
+      "path": "static/wxpay.png",
+      "sha256": "143a4ff53fba5f61a9d28a6ea9f1bb554a31e5ba7d573ad4a5797d603d0ca308"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/common/uni-pay/index.js",
+      "sha256": "c319f2ae3108152e1ce4717943c1c0f6c007f80d7400b9c83bd822f64dde30c9"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/common/uni-pay/LICENSE.md",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/common/uni-pay/package.json",
+      "sha256": "6650b5bbe34a552768d452019a312de208fb36a3cb9c335db8e312cd966c0522"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/common/error.js",
+      "sha256": "d24614327427da0aab76f4a9c174525b874cdc43caadaa435a007b9bee37e861"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/config/permission.js",
+      "sha256": "3e65db9bd098556478cf2b2619a8a2e0bf8355f078cafdd9965d2983fc1e4e4b"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/dao/index.js",
+      "sha256": "d7fde8fa97aa97e3a4600d7ca77ad351ff736c1d97e8d75263e48eea4290cf0e"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/dao/opendbOpenData.js",
+      "sha256": "4e46f4f61d7d1b1ed59ce422c93ebcdf8c8109ce2bb9c0ccbf29a6ee6ff27e0e"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/dao/readme.md",
+      "sha256": "a02f2956b544a6dcf6865236d46aae46439d61fcb2c0ec2a93ed280eff22427f"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/dao/uniIdUsers.js",
+      "sha256": "2b58a0aa6b4b60b60cfaa46968005fa6d6a3978594c39c340ff878f68c174e03"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/dao/uniPayOrders.js",
+      "sha256": "3c1c3322d7b6eb2d61d849efad8ef7e6fe161eaa9dd5fee22b945279d96a423d"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/index.obj.js",
+      "sha256": "4d3051ef23984b7e90ad6dea6ecaa7c5dbf853995cd9b9b40f29bb2eff77d4f7"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/lang/en.js",
+      "sha256": "268143d6e10f7a2a5b5588f04e8727479d10cf4e1722520fd2610cdbf8fd3eb6"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/lang/index.js",
+      "sha256": "7f8b35250083f3834417f65608e4d662efab0cfe3db33d206185bed5963c9bbf"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/lang/zh-hans.js",
+      "sha256": "77883001e64f89be5830825227a51375731b112a87a7581eb581ed724363b337"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/libs/alipay.js",
+      "sha256": "6eefbfcaff3ce3bbd65d91db00b5ff8bedc4cf42ee0583c10f9c151f0b297f7f"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/libs/certutil.js",
+      "sha256": "0f4a1566c4b8ad5e2ff792410c58356438cff2a4e0f6dd297b515cb4330e91d8"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/libs/common.js",
+      "sha256": "57fcbd120caf80e32fe59bd0c6aeae4d13e92e83e9c8e353465f1fa3db0f7807"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/libs/crypto.js",
+      "sha256": "ec530490224f150a0db5619a77c8bc1ee94912001831fb44140b3c53d48e0baa"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/libs/index.js",
+      "sha256": "8af43e39f5da46320a7557619b492e2952c6564bca77c5e640783c8a350eac87"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/libs/qrcode.js",
+      "sha256": "ac2b3517c199f439faf10734ac45f74f4e8dbd8a2e9ca5bc272afa31f30e4dc9"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/libs/wxpay.js",
+      "sha256": "0f409f9445e1bf6819a00f11bf4ca90d43ee31a34da6c38bc5d7c19b79dd08bd"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/middleware/access-control.js",
+      "sha256": "b3bdf4bcf0e347761a2e3b1728d60f277e513b6e558ce8168cd498224e49e763"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/middleware/auth.js",
+      "sha256": "da17c8d151036de5b53de7ba50f9491f34abb68c5f97f28b8cc439ca125e22d6"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/middleware/index.js",
+      "sha256": "4265170615998f74ff0ab8a2cb58d1dab78a2c1d8b2282cca83bf24f43dadfe0"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/notify/appleiap.js",
+      "sha256": "79925fe3096d174817f7e0bb1605ed6615bfa7dfd7974174536346c817d1297d"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/notify/test.js",
+      "sha256": "fe9a8b4707a360ce06dcea193043ab0bf93ed3d2920d03bd7e99daa388c1fa7f"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/notify/【重要】请先看这里.md",
+      "sha256": "97020da17697a84ffd13e02a3c2b1979121e6876e5c583b7a04c0cd86fb0d32a"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/package.json",
+      "sha256": "bcb351a7d8a0396e468d82c5c170147e685fa02315c7a11e6e19bec824b6b5b2"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/service/index.js",
+      "sha256": "7fe5f8d48cf63fee9faecd0955c7ff5df318c53314d7e7a7e594c42e2de666fd"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/service/pay.js",
+      "sha256": "bc408d7a6c4555eb36b8f2e4191c53dae38b9feada4a4ced3ebdfe4e541708d0"
+    },
+    {
+      "path": "uniCloud/cloudfunctions/uni-pay-co/uni-pay-co.param.js",
+      "sha256": "25b61457e750ef79b6b00d4646daac8750147dddb3002d44e2639341e533b76a"
+    },
+    {
+      "path": "uniCloud/database/opendb-open-data.index.json",
+      "sha256": "bc0c990d0442a9ee53cd66b91a9681d45455f82060bcfd6a1245a44b21d7084f"
+    },
+    {
+      "path": "uniCloud/database/uni-id-users.init_data.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "path": "uniCloud/database/uni-pay-orders.index.json",
+      "sha256": "428fe3aa64510103a0fe55a87f070240aa7fd71b17d325eb2cde1d3abdd3fbe3"
+    },
+    {
+      "path": "uniCloud/database/uni-pay-orders.init_data.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  ]
+}

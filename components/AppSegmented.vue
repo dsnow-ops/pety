@@ -1,0 +1,2 @@
+<template><view class="ui-segments" role="tablist"><button v-for="item in options" :key="item.value" role="tab" :aria-selected="modelValue===item.value" :class="['ui-segment',{'ui-segment--active':modelValue===item.value}]" :disabled="disabled" @click="$emit('update:modelValue',item.value);$emit('change',item.value)"><text class="ui-segment-face">{{item.label}}</text></button></view></template>
+<script>export default{props:{modelValue:String,options:Array,disabled:Boolean},emits:['update:modelValue','change']};</script>

@@ -1,0 +1,12 @@
+{
+  "bsonType": "object",
+  "required": ["ownerHash", "petHash", "sessionHash", "status", "createdAt"],
+  "permission": {"read": false, "create": false, "update": false, "delete": false},
+  "properties": {
+    "_id": {"description": "Opaque idempotency/session receipt; never stores images, descriptions or model answers"},
+    "ownerHash": {"bsonType": "string"}, "petHash": {"bsonType": "string"}, "sessionHash": {"bsonType": "string"},
+    "fingerprint": {"bsonType": "string"}, "status": {"bsonType": "string"}, "errorCode": {"bsonType": "string"},
+    "providerCalls": {"bsonType": "int"}, "quotaAuthorized": {"bsonType": "bool"},
+    "createdAt": {"bsonType": "long"}, "updatedAt": {"bsonType": "long"}
+  }
+}

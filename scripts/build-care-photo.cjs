@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
+const platform=process.argv[2]||'h5';if(!['h5','app','mp-weixin'].includes(platform))throw Error('Unsupported target');
+const hx='D:/HBuilderX',cli=path.join(hx,'plugins/uniapp-cli-vite'),out=path.resolve('unpackage/care-photo-v1/build',platform);
+fs.mkdirSync(out,{recursive:true});
+const env={...process.env,UNI_INPUT_DIR:process.cwd(),UNI_OUTPUT_DIR:out,UNI_PLATFORM:platform,UNI_CLI_CONTEXT:cli,RUN_BY_HBUILDERX:'true',UNI_HBUILDERX_PLUGINS:path.join(hx,'plugins'),HX_APP_ROOT:hx,NODE_PATH:path.join(cli,'node_modules')};
+const node=platform==='mp-weixin'?path.join(hx,'plugins/node/node.exe'):process.execPath;
+const result=cp.spawnSync(node,[path.join(cli,'node_modules/@dcloudio/vite-plugin-uni/bin/uni.js'),'build','-p',platform],{env,encoding:'utf8',maxBuffer:30*1024*1024});
+fs.writeFileSync(path.resolve('unpackage/care-photo-v1',`build-${platform}.log`),(result.stdout||'')+(result.stderr||''));
+console.log((result.stdout||'').slice(-1200),(result.stderr||'').slice(-1200));process.exitCode=result.status??1;

@@ -1,0 +1,14 @@
+{
+  "name": "user_get_profile",
+  "dependencies": {
+    "pety-auth": "file:../common/pety-auth",
+    "pety-membership-orders": "file:../common/pety-membership-orders"
+  },
+  "extensions": {
+    "uni-cloud-jql": {}
+  },
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 10
+  }
+}

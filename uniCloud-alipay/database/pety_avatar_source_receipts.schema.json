@@ -1,0 +1,12 @@
+{
+ "bsonType":"object",
+ "required":["owner","pet","session","cloudPath","fileId","state","expiresAt","createdAt"],
+ "permission":{"read":false,"create":false,"update":false,"delete":false},
+ "properties":{
+  "owner":{"bsonType":"string"},"pet":{"bsonType":"string"},"session":{"bsonType":"string"},
+  "cloudPath":{"bsonType":"string"},"fileId":{"bsonType":"string"},
+  "state":{"bsonType":"string","enum":["issued","ready"]},
+  "sha256":{"bsonType":"string"},"bytes":{"bsonType":"long"},
+  "expiresAt":{"bsonType":"long"},"createdAt":{"bsonType":"long"},"readyAt":{"bsonType":"long"}
+ }
+}

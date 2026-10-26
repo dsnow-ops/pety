@@ -1,0 +1,22 @@
+{
+  "bsonType": "object",
+  "required": ["userId", "skuId", "plan", "currency", "amountFen", "durationDays", "generationLimit", "status", "paymentStatus", "entitlementStatus", "createdAt", "updatedAt", "expiresAt"],
+  "permission": {"read": false, "create": false, "update": false, "delete": false},
+  "properties": {
+    "_id": {"bsonType": "string"},
+    "userId": {"bsonType": "string"},
+    "skuId": {"bsonType": "string"},
+    "plan": {"bsonType": "string", "enum": ["plus", "pro"]},
+    "currency": {"bsonType": "string", "enum": ["CNY"]},
+    "amountFen": {"bsonType": "int"},
+    "durationDays": {"bsonType": "int"},
+    "generationLimit": {"bsonType": "int"},
+    "status": {"bsonType": "string"},
+    "paymentStatus": {"bsonType": "string"},
+    "entitlementStatus": {"bsonType": "string"},
+    "paymentAttempt": {"bsonType": "object", "description": "Server-owned immutable channel, merchant and payment ID binding; no private keys."},
+    "createdAt": {"bsonType": "long"},
+    "updatedAt": {"bsonType": "long"},
+    "expiresAt": {"bsonType": "long"}
+  }
+}

@@ -1,0 +1,8 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const root=__dirname,base=JSON.parse(fs.readFileSync(path.join(root,'samples/pro-style-v3-01.json')));
+const prompt=fs.readFileSync(path.join(root,base.promptFile),'utf8')+'\n\n本次唯一加强的是独立角色素材的渲染环境，保持前文身份、脸型、姿势和软3D材质不变：输出只含角色本身的渲染层，没有场景层、环境层或阴影层。猫像独立悬浮在透明画布中的数字角色素材，仍保持自然坐姿，不增加飞翔动作。脚掌和尾巴下方不允许出现接触阴影、灰色软垫、地面反光或任何低透明灰雾。关闭地面阴影接收器和轮廓背光，不增加白色描边。轮廓外除真实毛尖和胡须覆盖的像素外全部 alpha=0；不要用接近透明的颜色铺满背景。不要生成灰色平面后遮罩，也不要把透明度画成可见的白色或棋盘格。\n';
+const spec={...base,id:'pro-alpha-v5-01',promptFile:'prompts/isolated-render-v5.txt',promptSha256:crypto.createHash('sha256').update(prompt).digest('hex'),change:'Against best v3-01, identical model, seed and six original inputs. Add only an explicit independent character render layer / no receiver or contact-shadow instruction. Test whether prompt can reduce ground shadow and exterior alpha residue without sacrificing identity or soft volume.'};
+fs.writeFileSync(path.join(root,spec.promptFile),prompt,{flag:'wx'});
+fs.writeFileSync(path.join(root,'samples',spec.id+'.json'),JSON.stringify(spec,null,2),{flag:'wx'});
+fs.writeFileSync(path.join(root,'samples',spec.id+'.hypothesis.json'),JSON.stringify({baseline:'pro-style-v3-01',maximumNewReservationFen:25,change:spec.change,acceptance:['No newly incorrect identity marks or anatomy','No contact shadow visible on white CSS background','Exterior alpha8 bounding-box residual count and max alpha improve; never threshold or edit raw PNG','Soft volume and natural eye proportions remain at least as good'],decision:'One sample only, inspect before any further paid request'},null,2),{flag:'wx'});

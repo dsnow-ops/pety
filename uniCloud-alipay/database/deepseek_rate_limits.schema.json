@@ -1,0 +1,51 @@
+{
+  "bsonType": "object",
+  "required": ["date", "identityHash", "count", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "bsonType": "string",
+      "description": "Hash of date and caller identity."
+    },
+    "date": {
+      "bsonType": "string",
+      "description": "UTC+8 period key, for example 2026-05-12 for free daily quota or 2026-05 for plus monthly quota."
+    },
+    "period": {
+      "bsonType": "string",
+      "description": "Quota period key."
+    },
+    "scope": {
+      "bsonType": "string",
+      "enum": ["day", "month"],
+      "description": "Quota window scope."
+    },
+    "plan": {
+      "bsonType": "string",
+      "enum": ["free", "plus"],
+      "description": "Membership plan used for this quota record."
+    },
+    "identityHash": {
+      "bsonType": "string",
+      "description": "SHA-256 hash of the cloud caller identity."
+    },
+    "count": {
+      "bsonType": "int",
+      "minimum": 1,
+      "description": "Number of AI calls consumed on this date."
+    },
+    "createdAt": {
+      "bsonType": "long",
+      "description": "Create timestamp in milliseconds."
+    },
+    "updatedAt": {
+      "bsonType": "long",
+      "description": "Update timestamp in milliseconds."
+    }
+  }
+}

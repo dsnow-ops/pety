@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "provider": "aliyun-oss",
+  "bucket": "",
+  "region": "",
+  "endpoint": "",
+  "accessKeyId": "",
+  "accessKeySecret": "",
+  "bucketAcl": "private",
+  "blockPublicAccess": true,
+  "versioning": "Disabled",
+  "prefix": "pety-private-v4",
+  "uploadTtlSeconds": 300,
+  "readTtlSeconds": 300,
+  "modelReadTtlSeconds": 900
+}

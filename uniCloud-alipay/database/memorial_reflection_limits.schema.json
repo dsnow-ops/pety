@@ -1,0 +1,16 @@
+{
+  "bsonType": "object",
+  "required": ["petHash", "localDate", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "description": "云函数按宠物和本地日期生成的单日锁" },
+    "petHash": { "bsonType": "string" },
+    "localDate": { "bsonType": "string" },
+    "createdAt": { "bsonType": "long" }
+  }
+}

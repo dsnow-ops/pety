@@ -1,0 +1,55 @@
+{
+  "original_html": "GUIZHUA_HOME_AND_FREE_SEAL_REFERENCE.html",
+  "original_sha256": "c4c222196c9f6fefa28a1ac86d73c321ce9f301486d396f6073997261ed28d97",
+  "source_has_dark_css": false,
+  "original_default_tokens": {
+    "bg": "#f5f2eb",
+    "surface": "rgba(255,255,250,.76)",
+    "ink": "#29312c"
+  },
+  "approved_screenshot": "reference/USER_APPROVED_SCREENSHOT.png",
+  "finding": "Approved screenshot is warm-dark; supplied original HTML defaults to light. Cause of different rendering is unverified; do not infer an extension or blame all differences on theme.",
+  "zip_contains_app_source": false,
+  "explicit_theme": {
+    "bg": "#25241e",
+    "surface": "#2e2e25",
+    "text": "#e2e8dc",
+    "secondary": "#bcc4ae",
+    "accent": "#59684f",
+    "paper": "#fcf9f1"
+  },
+  "geometry_units": "CSS logical px, not screenshot physical px",
+  "roles": {
+    "action": {
+      "height": 48,
+      "radius": 14,
+      "font": 15,
+      "lineHeight": 22
+    },
+    "segment": {
+      "trackHeight": 44,
+      "padding": 4,
+      "faceHeight": 36,
+      "faceRadius": 10
+    },
+    "event": {
+      "columns": 3,
+      "hitHeight": 44,
+      "faceHeight": 38,
+      "radius": 10,
+      "font": 14,
+      "lineHeight": 20
+    },
+    "week": {
+      "columns": 7,
+      "height": 74,
+      "radius": 16
+    },
+    "settings": {
+      "minHeight": 64,
+      "verticalPadding": 14,
+      "horizontalPadding": 16
+    }
+  },
+  "status": "Reference files only; not executed in user repo or on Android."
+}

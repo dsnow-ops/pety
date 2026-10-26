@@ -1,0 +1,21 @@
+{
+  "provider": "aliyun-bailian",
+  "region": "cn-beijing",
+  "apiKey": "YOUR_DASHSCOPE_API_KEY_HERE",
+  "workspaceId": "YOUR_BAILIAN_WORKSPACE_ID_HERE",
+  "model": "wan2.7-image-pro",
+  "styleReferenceFileId": "cloud://YOUR_PRIVATE_STYLE_REFERENCE_FILE_ID",
+  "size": "2K",
+  "n": 1,
+  "watermark": false,
+  "promptVersion": "pety-avatar-v2-strict",
+  "requestTimeoutMs": 25000,
+  "maxSourceImages": 3,
+  "devMemberBypass": false,
+  "cutoutProvider": "aliyun-viapi",
+  "viapiAccessKeyId": "",
+  "viapiAccessKeySecret": "",
+  "viapiEnabled": false,
+  "heroChromaEnabled": false,
+  "cutoutTimeoutMs": 45000
+}

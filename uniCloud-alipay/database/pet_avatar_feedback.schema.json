@@ -1,0 +1,28 @@
+{
+  "bsonType": "object",
+  "required": ["petId", "petHash", "jobId", "category", "status", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "description": "Managed by api_pet_avatar" },
+    "petId": { "bsonType": "string" },
+    "petHash": { "bsonType": "string" },
+    "jobId": { "bsonType": "string" },
+    "selectedCandidateFileId": { "bsonType": "string" },
+    "generationStage": { "bsonType": "string", "enum": ["initial", "regenerate", "revision"] },
+    "revisionText": { "bsonType": "string", "maxLength": 300 },
+    "qualityGateResult": { "bsonType": ["null", "object"] },
+    "model": { "bsonType": "string" },
+    "category": { "bsonType": "string", "enum": ["poor_quality", "revision_ineffective", "identity_mismatch", "distorted", "other"] },
+    "note": { "bsonType": "string", "maxLength": 600 },
+    "locale": { "bsonType": "string", "maxLength": 20 },
+    "quotaOwnerHash": { "bsonType": "string" },
+    "status": { "bsonType": "string", "enum": ["submitted", "reviewing", "resolved"] },
+    "createdAt": { "bsonType": "long" },
+    "updatedAt": { "bsonType": "long" }
+  }
+}

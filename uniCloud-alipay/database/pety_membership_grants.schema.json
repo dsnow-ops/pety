@@ -1,0 +1,55 @@
+{
+  "bsonType": "object",
+  "required": [
+    "orderId",
+    "userId",
+    "transactionId",
+    "provider",
+    "plan",
+    "state",
+    "durationDays",
+    "generationLimit",
+    "paidAt"
+  ],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "bsonType": "string"
+    },
+    "orderId": {
+      "bsonType": "string"
+    },
+    "userId": {
+      "bsonType": "string"
+    },
+    "transactionId": {
+      "bsonType": "string"
+    },
+    "provider": {
+      "bsonType": "string"
+    },
+    "plan": {
+      "bsonType": "string"
+    },
+    "state": {
+      "bsonType": "string"
+    },
+    "durationDays": {
+      "bsonType": "int"
+    },
+    "generationLimit": {
+      "bsonType": "int"
+    },
+    "paidAt": {
+      "bsonType": "long"
+    },
+    "source": {
+      "bsonType": "string"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+<template><button :class="['ui-button','ui-button--'+variant]" :disabled="disabled||loading" :loading="loading" hover-class="ui-pressed" @click="$emit('click',$event)"><uni-icons v-if="icon" :type="icon" size="20" color="currentColor"/><slot/></button></template>
+<script>export default{props:{variant:{type:String,default:'secondary'},icon:String,disabled:Boolean,loading:Boolean},emits:['click']};</script>

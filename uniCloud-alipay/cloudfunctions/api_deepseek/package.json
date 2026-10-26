@@ -1,0 +1,11 @@
+{
+  "name": "api_deepseek",
+  "dependencies": { "pety-auth": "file:../common/pety-auth", "jpeg-js": "^0.4.4", "pngjs": "^7.0.0" },
+  "extensions": {
+    "uni-cloud-jql": {}
+  },
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 150
+  }
+}

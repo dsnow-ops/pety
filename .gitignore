@@ -1,0 +1,25 @@
+node_modules/
+unpackage/
+.hbuilderx/
+.DS_Store
+
+# Local and cloud secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+!/.env.development
+**/config.json
+uniCloud-aliyun/cloudfunctions/**/config.json
+uniCloud-aliyun/cloudfunctions/common/uni-config-center/**/config.json
+uniCloud-tcb/cloudfunctions/**/config.json
+uniCloud-tcb/cloudfunctions/common/uni-config-center/**/config.json
+**/config.local.json
+
+# local cloud secrets
+uniCloud-alipay/cloudfunctions/api_deepseek/config.json
+
+/uniCloud-alipay/cloudfunctions/api_deepseek/config.json
+/uniCloud-alipay/cloudfunctions/api_pet_avatar/config.json

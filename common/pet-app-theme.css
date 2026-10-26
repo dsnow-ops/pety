@@ -1,0 +1,20 @@
+/* One palette across product pages. Semantic warning/success colors stay semantic. */
+.pet-ambient .chat-header,
+.pet-ambient .input-bar,
+.pet-ambient .service-strip,
+.pet-ambient .legal-content,
+.pet-ambient .hospital-card,
+.pet-ambient .form-card,
+.pet-ambient .service-card,
+.pet-ambient .auth-card,
+.pet-ambient .auth-surface,
+.pet-ambient .message-left .message-bubble {background:var(--pety-surface);border-color:var(--pety-rule);}
+.pet-ambient .tag-chip,
+.pet-ambient .draft-note,
+.pet-ambient .action-btn:not(.primary) {background:var(--pety-surface-muted);color:var(--pety-text-secondary);}
+.pet-ambient .integrated-stage .companion-card-action,
+.pet-ambient .continue-button,
+.pet-ambient .primary-button,
+.pet-ambient .action-btn.primary {background:var(--pety-primary);}
+.pet-ambient .companion-hero-section.integrated-stage {box-shadow:none;}
+.pet-ambient .today-panel {box-shadow:0 6rpx 18rpx rgba(42,35,28,.035);}
